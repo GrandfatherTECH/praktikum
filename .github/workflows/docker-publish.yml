@@ -55,6 +55,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           source: "frontend/dist/*"
           target: "/home/docker-runner/praktikum/frontend"
+          strip_components: 2
           rm: true
 
       - name: Deploy app
