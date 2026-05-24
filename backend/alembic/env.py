@@ -23,7 +23,7 @@ if not database_url:
     postgres_db = os.getenv("POSTGRES_DB")
     if all([postgres_user, postgres_password, postgres_host, postgres_db]):
         database_url = (
-            f"postgresql+psycopg://{postgres_user}:{postgres_password}"
+            f"postgresql+asyncpg://{postgres_user}:{postgres_password}"
             f"@{postgres_host}:{postgres_port}/{postgres_db}"
         )
 
