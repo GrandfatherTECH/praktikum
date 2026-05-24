@@ -1,20 +1,17 @@
 # SED Phase 1 Skeleton
 
-Phase 1 provides the initial project skeleton only.
+Phase 1 keeps the system intentionally minimal: FastAPI backend, React frontend, and Docker Compose with only `backend`, `postgres`, and `redis`.
 
-## Architecture Constraints
+## Local startup
 
-1. Docker Compose runs exactly 3 services: `backend`, `postgres`, `redis`.
-2. Frontend is not Dockerized.
-3. Nginx is external host-level only (example config in `deploy/nginx/sed-app.example.conf`).
-
-## Local Backend Startup
+1. Copy `.env.example` to `.env` and adjust credentials if needed.
+2. Start backend infrastructure:
 
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
 
-Backend health endpoint:
+3. Check backend health:
 
 ```bash
 curl http://127.0.0.1:8000/api/v1/health
@@ -26,9 +23,9 @@ Expected response:
 {"status":"ok"}
 ```
 
-## Local Frontend Startup
+## Frontend development
 
-Run frontend separately from Docker:
+Frontend runs outside Docker:
 
 ```bash
 cd frontend
@@ -36,23 +33,35 @@ npm install
 npm run dev
 ```
 
-The frontend uses Vite proxy for `/api` to `http://127.0.0.1:8000`.
+Vite proxies `/api` to `http://127.0.0.1:8000`.
 
-## Frontend Production Build
+## Frontend production build
 
 ```bash
 cd frontend
 npm run build
 ```
 
-Deploy static files by copying `frontend/dist` to:
+Install static files by copying `frontend/dist` to `/var/www/sed/frontend`.
 
-```text
-/var/www/sed/frontend
+## Production deployment
+
+Production Compose uses only `backend`, `postgres`, and `redis`:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
 ```
 
-## Important Notes
+Recommended rollout script:
 
-1. No `frontend` service exists in Docker Compose.
-2. No Nginx container exists in Docker Compose.
-3. PostgreSQL and Redis are internal-only (no host ports exposed).
+```bash
+./deploy/scripts/deploy.sh
+```
+
+## Important notes
+
+1. `frontend` is not Dockerized and is never started via Compose.
+2. There is no Nginx container; only the host-level Nginx is supported.
+3. PostgreSQL data is stored in a named Docker volume `sed_postgres_data` so data survives container recreation.
+4. Backend is published only on `127.0.0.1:8000` at the host level.
+5. Do not use `docker compose down -v` on environments where database data must be preserved.

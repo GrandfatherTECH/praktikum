@@ -7,10 +7,11 @@ class Settings(BaseSettings):
     app_name: str = "SED Backend"
     app_host: str = "0.0.0.0"
     app_port: int = 8000
+    app_env: str = "development"
 
     postgres_db: str = "sed"
     postgres_user: str = "sed"
-    postgres_password: str = "sed"
+    postgres_password: str = "change_me"
     postgres_host: str = "postgres"
     postgres_port: int = 5432
 

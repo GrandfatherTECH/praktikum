@@ -3,7 +3,7 @@ name: Build and Distribute
 on:
   push:
     branches:
-      - master
+      - main
   workflow_dispatch:
 
 permissions:
@@ -12,8 +12,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  # IMAGE_PREFIX: ghcr.io/${{ github.repository }}
-  
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -47,28 +46,8 @@ jobs:
           npm ci
           npm run build
 
-      - name: Push frontend
-        uses: appleboy/scp-action@v1.0.0
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          source: "frontend/dist/*"
-          target: "/home/docker-runner/praktikum/frontend"
-          strip_components: 2
-          rm: true
-
-      - name: Deploy app
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            set -euo pipefail
-            /home/docker-runner/praktikum/deploy.sh
-            
-            
-
-
-
+          name: frontend-dist
+          path: frontend/dist
