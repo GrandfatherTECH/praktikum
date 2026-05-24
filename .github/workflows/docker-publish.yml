@@ -12,14 +12,18 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ghcr.io/${{ github.repository }}
-
+  # IMAGE_PREFIX: ghcr.io/${{ github.repository }}
+  
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2
+
+      - name: Prepare image names
+        run: |
+          echo "BACKEND_IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}-backend" >> "$GITHUB_ENV"
 
       - name: Login to ghcr.io
         uses: docker/login-action@v4
@@ -34,8 +38,8 @@ jobs:
           context: ./backend
           push: true
           tags: |
-            ${{ env.IMAGE_PREFIX }}-backend:latest
-            ${{ env.IMAGE_PREFIX }}-backend:${{ github.sha }}
+            ${{ env.BACKEND_IMAGE }}:latest
+            ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
 
       - name: Build frontend
         working-directory: ./frontend
@@ -54,7 +58,7 @@ jobs:
           rm: true
 
       - name: Deploy app
-        uses: appleboy/scp-action@v1.0.0
+        uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USERNAME }}
