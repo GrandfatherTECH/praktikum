@@ -1,5 +1,6 @@
 from sqlalchemy import func, select
 
+from app.core.config import settings
 from app.models.audit_log import AuditLog
 
 
@@ -19,7 +20,7 @@ async def test_health_endpoint(client):
 async def test_login_success(client, users_fixture):
     response = await client.post("/api/v1/auth/login", json={"username": "admin", "password": "admin12345"})
     assert response.status_code == 200
-    assert response.cookies.get("sed_session")
+    assert response.cookies.get(settings.session_cookie_name)
 
 
 async def test_login_failure(client, users_fixture):
