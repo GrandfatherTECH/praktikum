@@ -18,7 +18,7 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
-user_role_enum = sa.Enum(
+user_role_enum = postgresql.ENUM(
     "ADMIN",
     "CHIEF",
     "DEPARTMENT_HEAD",
@@ -26,6 +26,7 @@ user_role_enum = sa.Enum(
     "INCOMING_DOC_OPERATOR",
     "PERSONNEL_OFFICE",
     name="user_role",
+    create_type=False,
 )
 
 
