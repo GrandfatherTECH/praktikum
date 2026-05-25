@@ -33,6 +33,7 @@ function App() {
     <main style={{ fontFamily: "Arial, sans-serif", margin: "2rem" }}>
       <h1>Система документооборота запущена</h1>
       <p>Проверка backend: {health}</p>
+      <p>URL проверки: {healthUrl}</p>
     </main>
   );
 }
