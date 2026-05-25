@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -30,6 +30,15 @@ class Settings(BaseSettings):
     initial_admin_username: str = "admin"
     initial_admin_password: str = "admin12345"
     initial_admin_full_name: str = "System Administrator"
+
+    @field_validator("session_cookie_domain", mode="before")
+    @classmethod
+    def empty_cookie_domain_to_none(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if isinstance(value, str) and value.strip() == "":
+            return None
+        return value
 
     @property
     def database_url(self) -> str:
