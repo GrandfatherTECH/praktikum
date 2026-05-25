@@ -5,15 +5,18 @@ type HealthResponse = {
   status: string;
 };
 
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+const healthUrl = `${apiBaseUrl}/api/v1/health`;
+
 function App() {
   const [health, setHealth] = useState<string>("checking");
 
   useEffect(() => {
     const fetchHealth = async () => {
       try {
-        const response = await fetch("/api/v1/health");
+        const response = await fetch(healthUrl);
         if (!response.ok) {
-          setHealth("error");
+          setHealth(`error (HTTP ${response.status})`);
           return;
         }
         const data = (await response.json()) as HealthResponse;
