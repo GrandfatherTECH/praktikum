@@ -65,11 +65,19 @@ Recommended rollout script:
 ./deploy/scripts/deploy.sh
 ```
 
+If your global Nginx runs in Docker, attach it to this app network:
+
+```bash
+docker network connect sed_app_net <global-nginx-container-name>
+```
+
+Then configure upstream to `backend:8000` (see `deploy/nginx/sed-app.example.conf`).
+
 ## Important notes
 
 1. `frontend` is not Dockerized and is never started via Compose.
-2. There is no Nginx container; only the host-level Nginx is supported.
+2. This repository does not run an Nginx service in Compose. A global shared Nginx container is allowed if managed outside this project and connected to `sed_app_net`.
 3. PostgreSQL data is stored in a named Docker volume `sed_postgres_data` mounted at `/var/lib/postgresql`, which is the correct layout for `postgres:18+`.
-4. Backend is published only on `127.0.0.1:8000` at the host level.
+4. Local compose publishes backend on `127.0.0.1:8000`; production compose keeps backend internal (`expose 8000`) for access from shared Nginx via `sed_app_net`.
 5. Do not use `docker compose down -v` on environments where database data must be preserved.
 6. If you upgrade an existing volume from `postgres:16/17` to `postgres:18`, you must either migrate the data with `pg_upgrade` or remove the old volume for a clean dev reset.
