@@ -190,6 +190,19 @@ body {
   background: linear-gradient(180deg, #bb3434 0%, #8e1f1f 100%);
   border-color: #a12626;
   box-shadow: 0 10px 24px rgba(161, 38, 38, 0.24);
+  color: #fff;
+}
+
+.app-content .ant-btn-color-primary,
+.login-card .ant-btn-color-primary {
+  color: #fff;
+}
+
+.app-content .ant-btn-variant-outlined.ant-btn-color-primary,
+.app-content .ant-btn-variant-dashed.ant-btn-color-primary,
+.app-content .ant-btn-background-ghost.ant-btn-color-primary {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .app-content .ant-table-wrapper .ant-table,
@@ -239,20 +252,35 @@ body {
 .app-content .ant-modal-header,
 .app-content .ant-modal-footer,
 .app-content .ant-select-dropdown,
-.app-content .ant-dropdown-menu {
+.app-content .ant-dropdown-menu,
+.ant-popover .ant-popover-inner,
+.ant-popconfirm {
   background: var(--bg-panel-strong);
   color: var(--text-main);
 }
 
 .app-content .ant-modal-content,
-.app-content .ant-select-dropdown {
+.app-content .ant-select-dropdown,
+.ant-popover .ant-popover-inner {
   border: 1px solid var(--border-soft);
 }
 
 .app-content .ant-modal-title,
 .app-content .ant-select-item,
-.app-content .ant-dropdown-menu-title-content {
+.app-content .ant-dropdown-menu-title-content,
+.app-content .ant-select-selection-item,
+.app-content .ant-select-selection-placeholder,
+.ant-popconfirm-title,
+.ant-popconfirm-description {
   color: var(--text-main);
+}
+
+.app-content .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.app-content .ant-select-item-option-active:not(.ant-select-item-option-disabled) {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .app-content .ant-switch {
@@ -322,8 +350,16 @@ body {
 .ant-notification-notice,
 .ant-message-notice-content {
   background: var(--bg-panel-strong) !important;
-  color: var(--text-main);
+  color: var(--text-main) !important;
   border: 1px solid var(--border-soft);
+}
+
+.ant-notification-notice-message,
+.ant-notification-notice-description,
+.ant-notification-notice .anticon,
+.ant-message-custom-content,
+.ant-message-custom-content span {
+  color: var(--text-main) !important;
 }
 
 @media (max-width: 991px) {

@@ -21,7 +21,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.get("", response_model=list[UserRead])
 async def list_users(
-    _: User = Depends(require_roles(UserRole.ADMIN, UserRole.CHIEF)),
+    _: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ) -> list[UserRead]:
     result = await db.execute(select(User).order_by(User.id.asc()))
@@ -32,7 +32,7 @@ async def list_users(
 async def create_user(
     payload: UserCreate,
     request: Request,
-    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.CHIEF)),
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
     db: AsyncSession = Depends(get_db_session),
 ) -> UserRead:
     existing = await db.execute(select(User).where(User.username == payload.username))
@@ -187,20 +187,14 @@ async def update_user(
     user_id: int,
     payload: UserUpdate,
     request: Request,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
     db: AsyncSession = Depends(get_db_session),
 ) -> UserRead:
-    if current_user.role not in (UserRole.ADMIN, UserRole.CHIEF):
-        raise HTTPException(status_code=403, detail="Insufficient permissions")
-
     user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     data = payload.model_dump(exclude_unset=True)
-    if "role" in data and current_user.role not in (UserRole.ADMIN, UserRole.CHIEF):
-        raise HTTPException(status_code=403, detail="Role change is forbidden")
-
     if "department_id" in data and data["department_id"] is not None:
         dept = await db.get(Department, data["department_id"])
         if not dept:

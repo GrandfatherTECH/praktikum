@@ -43,7 +43,7 @@ async def test_me_without_session(client):
 async def test_user_approval_access_restriction(client, users_fixture):
     await do_login(client, "employee", "employee12345")
 
-    target_id = users_fixture["pending"].id
+    target_id = users_fixture["unapproved"].id
     response = await client.post(f"/api/v1/users/{target_id}/approve")
     assert response.status_code == 403
 
@@ -52,6 +52,40 @@ async def test_department_creation_access_restriction(client, users_fixture):
     await do_login(client, "employee", "employee12345")
     response = await client.post("/api/v1/departments", json={"name": "Новый отдел"})
     assert response.status_code == 403
+
+
+async def test_users_list_available_for_authenticated_employee(client, users_fixture):
+    await do_login(client, "employee", "employee12345")
+    response = await client.get("/api/v1/users")
+    assert response.status_code == 200
+    assert len(response.json()) >= 3
+
+
+async def test_chief_cannot_edit_user(client, users_fixture):
+    await do_login(client, "chief", "chief12345")
+    response = await client.patch(
+        f"/api/v1/users/{users_fixture['employee'].id}",
+        json={"full_name": "Changed Name"},
+    )
+    assert response.status_code == 403
+
+
+async def test_chief_can_approve_but_cannot_create_user(client, users_fixture):
+    await do_login(client, "chief", "chief12345")
+    approve_response = await client.post(f"/api/v1/users/{users_fixture['unapproved'].id}/approve")
+    assert approve_response.status_code == 200
+
+    create_response = await client.post(
+        "/api/v1/users",
+        json={
+            "full_name": "New User",
+            "username": "new_user",
+            "password": "newuser12345",
+            "role": "EMPLOYEE",
+            "is_active": True,
+        },
+    )
+    assert create_response.status_code == 403
 
 
 async def test_audit_log_created_on_login(client, users_fixture, db_session):

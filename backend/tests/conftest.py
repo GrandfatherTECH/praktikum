@@ -23,6 +23,11 @@ async def db_session() -> AsyncGenerator:
         await session.execute(delete(Department))
         await session.commit()
         yield session
+        await session.execute(delete(AuditLog))
+        await session.execute(delete(Session))
+        await session.execute(delete(User))
+        await session.execute(delete(Department))
+        await session.commit()
 
 
 @pytest.fixture()
@@ -65,18 +70,18 @@ async def users_fixture(db_session):
         is_active=True,
         is_approved=True,
     )
-    pending = User(
-        full_name="Pending",
-        username="pending",
-        password_hash=hash_password("pending12345"),
+    unapproved = User(
+        full_name="Unapproved",
+        username="unapproved",
+        password_hash=hash_password("unapproved12345"),
         role=UserRole.EMPLOYEE,
         department_id=dept.id,
         is_active=True,
         is_approved=False,
     )
-    db_session.add_all([admin, chief, employee, pending])
+    db_session.add_all([admin, chief, employee, unapproved])
     await db_session.commit()
-    return {"admin": admin, "chief": chief, "employee": employee, "pending": pending, "department": dept}
+    return {"admin": admin, "chief": chief, "employee": employee, "unapproved": unapproved, "department": dept}
 
 
 async def login(client: AsyncClient, username: str, password: str) -> None:

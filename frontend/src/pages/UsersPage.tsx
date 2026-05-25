@@ -44,7 +44,7 @@ function findDepartmentName(departments: Department[], departmentId: number | nu
 
 export function UsersPage() {
   const currentUserQuery = useCurrentUserQuery();
-  const usersQuery = useUsersQuery(ADMIN_ROLES.includes(currentUserQuery.data?.role ?? "EMPLOYEE"));
+  const usersQuery = useUsersQuery();
   const departmentsQuery = useDepartmentsQuery();
   const queryClient = useQueryClient();
   const { notification } = App.useApp();
@@ -54,7 +54,8 @@ export function UsersPage() {
   const [createForm] = Form.useForm<UserFormValues>();
   const [editForm] = Form.useForm<UserFormValues>();
 
-  const canManageUsers = ADMIN_ROLES.includes(currentUserQuery.data?.role ?? "EMPLOYEE");
+  const canApproveUsers = ADMIN_ROLES.includes(currentUserQuery.data?.role ?? "EMPLOYEE");
+  const canAdminUsers = currentUserQuery.data?.role === "ADMIN";
 
   const departmentOptions = useMemo(
     () =>
@@ -140,25 +141,26 @@ export function UsersPage() {
       key: "actions",
       render: (_, record) => (
         <Space wrap>
-          <Button
-            icon={<EditOutlined />}
-            onClick={() => {
-              setEditingUser(record);
-              editForm.setFieldsValue({
-                full_name: record.full_name,
-                role: record.role,
-                department_id: record.department_id ?? undefined,
-                position: record.position ?? undefined,
-                is_active: record.is_active,
-              });
-            }}
-          >
-            Изменить
-          </Button>
-          {!record.is_approved ? (
+          {canAdminUsers ? (
+            <Button
+              icon={<EditOutlined />}
+              onClick={() => {
+                setEditingUser(record);
+                editForm.setFieldsValue({
+                  full_name: record.full_name,
+                  role: record.role,
+                  department_id: record.department_id ?? undefined,
+                  position: record.position ?? undefined,
+                  is_active: record.is_active,
+                });
+              }}
+            >
+              Изменить
+            </Button>
+          ) : null}
+          {canApproveUsers && !record.is_approved ? (
             <Button
               type="primary"
-              ghost
               icon={<CheckOutlined />}
               loading={approveMutation.isPending}
               onClick={async () => {
@@ -175,7 +177,7 @@ export function UsersPage() {
               Подтвердить
             </Button>
           ) : null}
-          {currentUserQuery.data?.role === "ADMIN" ? (
+          {canAdminUsers ? (
             <Button
               icon={<KeyOutlined />}
               loading={otpMutation.isPending}
@@ -193,7 +195,7 @@ export function UsersPage() {
               Одноразовый пароль
             </Button>
           ) : null}
-          {currentUserQuery.data?.role === "ADMIN" ? (
+          {canAdminUsers ? (
             <Popconfirm
               title="Удалить пользователя?"
               description="Действие необратимо. Все активные сессии пользователя будут прекращены."
@@ -220,10 +222,6 @@ export function UsersPage() {
     },
   ];
 
-  if (!canManageUsers) {
-    return <QueryState isLoading={false} forbidden={true}>unused</QueryState>;
-  }
-
   const usersForbidden = usersQuery.error instanceof ApiError && usersQuery.error.status === 403;
 
   return (
@@ -234,17 +232,19 @@ export function UsersPage() {
             <Typography.Title level={3}>Пользователи</Typography.Title>
             <Typography.Text type="secondary">Управление учетными записями и подтверждением доступа.</Typography.Text>
           </div>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              createForm.resetFields();
-              createForm.setFieldsValue({ is_active: true, role: "EMPLOYEE" });
-              setIsCreateOpen(true);
-            }}
-          >
-            Создать пользователя
-          </Button>
+          {canAdminUsers ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                createForm.resetFields();
+                createForm.setFieldsValue({ is_active: true, role: "EMPLOYEE" });
+                setIsCreateOpen(true);
+              }}
+            >
+              Создать пользователя
+            </Button>
+          ) : null}
         </Space>
       </Card>
 

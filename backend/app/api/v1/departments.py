@@ -28,7 +28,7 @@ async def list_departments(
 async def create_department(
     payload: DepartmentCreate,
     request: Request,
-    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.CHIEF)),
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
     db: AsyncSession = Depends(get_db_session),
 ) -> DepartmentRead:
     existing = await db.execute(select(Department).where(Department.name == payload.name))
@@ -97,7 +97,7 @@ async def update_department(
     department_id: int,
     payload: DepartmentUpdate,
     request: Request,
-    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.CHIEF)),
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
     db: AsyncSession = Depends(get_db_session),
 ) -> DepartmentRead:
     department = await db.get(Department, department_id)

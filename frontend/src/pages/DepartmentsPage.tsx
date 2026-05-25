@@ -22,7 +22,6 @@ import { createDepartment, deleteDepartment, updateDepartment } from "../api/dep
 import type { Department, DepartmentCreatePayload, DepartmentUpdatePayload } from "../api/types";
 import { useCurrentUserQuery } from "../app/auth";
 import { QueryState } from "../components/QueryState";
-import { ADMIN_ROLES } from "../constants/roles";
 import { applyValidationErrors, getErrorMessage } from "../utils/errors";
 import { useDepartmentsQuery, useUsersQuery } from "./hooks";
 
@@ -35,7 +34,7 @@ type DepartmentFormValues = {
 export function DepartmentsPage() {
   const currentUserQuery = useCurrentUserQuery();
   const departmentsQuery = useDepartmentsQuery();
-  const canManageDepartments = ADMIN_ROLES.includes(currentUserQuery.data?.role ?? "EMPLOYEE");
+  const canManageDepartments = currentUserQuery.data?.role === "ADMIN";
   const usersQuery = useUsersQuery(canManageDepartments);
   const queryClient = useQueryClient();
   const { notification } = App.useApp();

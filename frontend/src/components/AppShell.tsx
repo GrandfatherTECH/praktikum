@@ -121,6 +121,7 @@ export function AppShell({ currentUser }: AppShellProps) {
         <Form
           form={passwordForm}
           layout="vertical"
+          autoComplete="off"
           onFinish={async (values) => {
             await changePasswordMutation.mutateAsync({
               current_password: values.current_password,
@@ -140,7 +141,7 @@ export function AppShell({ currentUser }: AppShellProps) {
             name="current_password"
             rules={[{ required: true, message: "Введите текущий временный пароль" }]}
           >
-            <Input.Password autoComplete="current-password" />
+            <Input.Password autoComplete="off" />
           </Form.Item>
           <Form.Item
             label="Новый пароль"
@@ -168,7 +169,7 @@ export function AppShell({ currentUser }: AppShellProps) {
               }),
             ]}
           >
-            <Input.Password autoComplete="new-password" />
+            <Input.Password autoComplete="off" />
           </Form.Item>
         </Form>
       </Modal>
