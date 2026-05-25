@@ -1,12 +1,13 @@
-# SED Phase 2 Backend Foundation
+# SED Phase 3A Frontend Foundation
 
-Phase 2 implements backend foundation only: async PostgreSQL ORM, Alembic schema, server-side session auth, users/departments management with RBAC, seed data, and audit logging.
+Phase 3A adds the first real frontend layer on top of the existing backend foundation: React + TypeScript + Vite, session-based authentication UI, protected routing, dashboard, and admin pages for users and departments.
 
 Architecture remains unchanged:
 - Docker Compose services: `backend`, `postgres`, `redis` only.
 - No frontend container, no frontend Dockerfile.
 - No Nginx container in this project.
 - Frontend remains non-Dockerized.
+- Frontend calls backend through relative `/api/v1` paths and Vite dev proxy in local development.
 
 ## Run backend stack
 
@@ -37,6 +38,12 @@ Change all passwords in production.
 - `incoming_op` / `incoming12345`
 - `personnel` / `personnel12345`
 
+Login flow:
+- open `http://127.0.0.1:5173`
+- sign in with one of the seeded accounts above
+- session is stored in HttpOnly cookie by the backend
+- protected routes redirect to `/login` when session is missing or expired
+
 ## Health check
 
 ```bash
@@ -57,6 +64,9 @@ npm install
 npm run dev
 ```
 
+Vite runs locally on `127.0.0.1:5173` and proxies `/api` to `http://127.0.0.1:8000`.
+Do not add the frontend to Docker Compose.
+
 ## Frontend build (outside Docker)
 
 ```bash
@@ -65,3 +75,19 @@ npm run build
 ```
 
 Deploy static files to `/var/www/sed/frontend` using `deploy/scripts/install-frontend.sh`.
+
+## Implemented UI in Phase 3A
+
+- Login page with backend session auth integration.
+- Authenticated layout with sidebar, top bar, current user, and logout.
+- Dashboard with current user info and temporary status cards.
+- Users admin page:
+  - user list
+  - create user
+  - edit user
+  - approve user
+- Departments page:
+  - department list
+  - create department
+  - edit department
+- Placeholder sections for documents, incoming documents, resolutions, archive, and audit log.
