@@ -71,12 +71,16 @@ def _user_payloads(dept1_id: int, dept2_id: int) -> list[dict]:
 
 async def seed() -> None:
     async with SessionLocal() as session:
+        created_departments = 0
+        created_users = 0
+
         result = await session.execute(select(Department).where(Department.name == "Администрация"))
         dept1 = result.scalar_one_or_none()
         if not dept1:
             dept1 = Department(name="Администрация", is_active=True)
             session.add(dept1)
             await session.flush()
+            created_departments += 1
 
         result = await session.execute(select(Department).where(Department.name == "Отдел документооборота"))
         dept2 = result.scalar_one_or_none()
@@ -84,6 +88,7 @@ async def seed() -> None:
             dept2 = Department(name="Отдел документооборота", is_active=True)
             session.add(dept2)
             await session.flush()
+            created_departments += 1
 
         for payload in _user_payloads(dept1.id, dept2.id):
             result = await session.execute(select(User).where(User.username == payload["username"]))
@@ -102,6 +107,7 @@ async def seed() -> None:
                     is_approved=payload["is_approved"],
                 )
             )
+            created_users += 1
 
         result = await session.execute(select(User).where(User.username == settings.initial_admin_username))
         admin = result.scalar_one_or_none()
@@ -116,8 +122,13 @@ async def seed() -> None:
                     is_approved=True,
                 )
             )
+            created_users += 1
 
         await session.commit()
+        print(
+            f"Seed completed: departments_created={created_departments}, "
+            f"users_created={created_users}"
+        )
 
 
 if __name__ == "__main__":
