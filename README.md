@@ -62,6 +62,7 @@ Recommended rollout script:
 
 1. `frontend` is not Dockerized and is never started via Compose.
 2. There is no Nginx container; only the host-level Nginx is supported.
-3. PostgreSQL data is stored in a named Docker volume `sed_postgres_data` so data survives container recreation.
+3. PostgreSQL data is stored in a named Docker volume `sed_postgres_data` mounted at `/var/lib/postgresql`, which is the correct layout for `postgres:18+`.
 4. Backend is published only on `127.0.0.1:8000` at the host level.
 5. Do not use `docker compose down -v` on environments where database data must be preserved.
+6. If you upgrade an existing volume from `postgres:16/17` to `postgres:18`, you must either migrate the data with `pg_upgrade` or remove the old volume for a clean dev reset.
