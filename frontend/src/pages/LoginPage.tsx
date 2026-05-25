@@ -17,6 +17,7 @@ export function LoginPage() {
   return (
     <div className="login-page">
       <Card className="login-card">
+        <Typography.Text className="login-kicker">Защищенная передача документов</Typography.Text>
         <Typography.Title level={2}>Вход</Typography.Title>
         <Typography.Paragraph type="secondary">
           Используйте учетную запись, выданную администратором системы.

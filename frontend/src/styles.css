@@ -1,5 +1,19 @@
 @import "antd/dist/reset.css";
 
+:root {
+  --bg-app: #09090b;
+  --bg-panel: rgba(20, 20, 24, 0.84);
+  --bg-panel-strong: rgba(26, 26, 30, 0.94);
+  --bg-card: rgba(255, 255, 255, 0.04);
+  --border-soft: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(180, 54, 54, 0.28);
+  --text-main: #f2f2f3;
+  --text-soft: #b6b6bc;
+  --accent: #a12626;
+  --accent-soft: rgba(161, 38, 38, 0.18);
+  --shadow-panel: 0 24px 64px rgba(0, 0, 0, 0.36);
+}
+
 html,
 body,
 #root {
@@ -8,8 +22,11 @@ body,
 }
 
 body {
-  background: #f3f5f7;
-  color: #1f1f1f;
+  background:
+    radial-gradient(circle at 18% 85%, rgba(128, 22, 22, 0.4), transparent 30%),
+    radial-gradient(circle at 85% 18%, rgba(120, 20, 20, 0.38), transparent 26%),
+    linear-gradient(135deg, #09090b 0%, #121215 46%, #09090b 100%);
+  color: var(--text-main);
   font-family:
     "Segoe UI",
     "Helvetica Neue",
@@ -18,28 +35,230 @@ body {
 
 .app-layout {
   min-height: 100vh;
+  background: transparent;
+}
+
+.app-layout .ant-layout,
+.app-layout .ant-layout-sider {
+  background: transparent;
 }
 
 .app-logo {
-  padding: 24px 20px 20px;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 28px 24px 20px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.app-layout .ant-layout-sider {
+  border-right: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, rgba(10, 10, 12, 0.96), rgba(15, 15, 18, 0.88)) !important;
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.03);
 }
 
 .app-logo h4.ant-typography {
   margin-bottom: 4px;
+  color: var(--text-main);
+}
+
+.app-logo .ant-typography-secondary {
+  color: var(--text-soft);
+}
+
+.app-menu {
+  padding: 12px;
+  background: transparent;
+}
+
+.app-menu.ant-menu {
+  color: var(--text-soft);
+  background: transparent;
+  border-inline-end: 0 !important;
+}
+
+.app-menu.ant-menu .ant-menu-item {
+  height: 44px;
+  line-height: 44px;
+  margin: 6px 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+}
+
+.app-menu.ant-menu .ant-menu-item-selected {
+  color: var(--text-main);
+  background: linear-gradient(90deg, rgba(161, 38, 38, 0.24), rgba(161, 38, 38, 0.06));
+  border-color: var(--border-strong);
+}
+
+.app-menu.ant-menu .ant-menu-item:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .app-header {
+  height: auto;
+  line-height: normal;
+  padding: 18px 24px;
+  background: transparent !important;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.app-header-bar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
-  padding: 0 24px;
-  background: #fff;
-  border-bottom: 1px solid #f0f0f0;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+}
+
+.app-header-copy {
+  min-width: 0;
+}
+
+.app-header-kicker {
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+}
+
+.app-header-actions {
+  min-width: 0;
+}
+
+.app-user-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 0;
+  max-width: min(42vw, 360px);
+}
+
+.app-user-name,
+.app-user-role {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.app-user-name {
+  color: var(--text-main);
+}
+
+.app-user-role {
+  color: var(--text-soft) !important;
 }
 
 .app-content {
   padding: 24px;
+}
+
+.app-content .ant-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-panel);
+  backdrop-filter: blur(8px);
+}
+
+.app-content .ant-card .ant-typography,
+.app-content .ant-card .ant-typography strong {
+  color: var(--text-main);
+}
+
+.app-content .ant-card .ant-typography-secondary,
+.app-content .ant-card .ant-typography.ant-typography-secondary {
+  color: var(--text-soft);
+}
+
+.app-content .ant-btn-default {
+  border-color: var(--border-soft);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-main);
+}
+
+.app-content .ant-btn-primary,
+.login-card .ant-btn-primary {
+  background: linear-gradient(180deg, #bb3434 0%, #8e1f1f 100%);
+  border-color: #a12626;
+  box-shadow: 0 10px 24px rgba(161, 38, 38, 0.24);
+}
+
+.app-content .ant-table-wrapper .ant-table,
+.app-content .ant-table-wrapper .ant-table-container,
+.app-content .ant-table-wrapper .ant-table-thead > tr > th,
+.app-content .ant-table-wrapper .ant-table-tbody > tr > td {
+  background: transparent;
+  color: var(--text-main);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.app-content .ant-table-wrapper .ant-table-thead > tr > th {
+  color: var(--text-soft);
+  font-weight: 600;
+}
+
+.app-content .ant-table-wrapper .ant-table-tbody > tr.ant-table-row:hover > td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.app-content .ant-pagination .ant-pagination-item,
+.app-content .ant-pagination .ant-pagination-prev,
+.app-content .ant-pagination .ant-pagination-next {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--border-soft);
+}
+
+.app-content .ant-input,
+.app-content .ant-input-affix-wrapper,
+.app-content .ant-select-selector,
+.app-content .ant-picker,
+.app-content .ant-input-number,
+.login-card .ant-input,
+.login-card .ant-input-affix-wrapper,
+.login-card .ant-select-selector {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: var(--text-main) !important;
+}
+
+.app-content .ant-form-item-label > label,
+.login-card .ant-form-item-label > label {
+  color: var(--text-soft);
+}
+
+.app-content .ant-modal-content,
+.app-content .ant-modal-header,
+.app-content .ant-modal-footer,
+.app-content .ant-select-dropdown,
+.app-content .ant-dropdown-menu {
+  background: var(--bg-panel-strong);
+  color: var(--text-main);
+}
+
+.app-content .ant-modal-content,
+.app-content .ant-select-dropdown {
+  border: 1px solid var(--border-soft);
+}
+
+.app-content .ant-modal-title,
+.app-content .ant-select-item,
+.app-content .ant-dropdown-menu-title-content {
+  color: var(--text-main);
+}
+
+.app-content .ant-switch {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.app-content .ant-switch.ant-switch-checked {
+  background: #8e1f1f;
+}
+
+.state-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
 }
 
 .centered-state {
@@ -56,19 +275,73 @@ body {
   justify-content: center;
   padding: 24px;
   background:
-    linear-gradient(135deg, #eef3fb 0%, #f8fafc 45%, #e9edf2 100%);
+    radial-gradient(circle at 18% 85%, rgba(128, 22, 22, 0.5), transparent 30%),
+    radial-gradient(circle at 85% 18%, rgba(120, 20, 20, 0.44), transparent 26%),
+    linear-gradient(135deg, #09090b 0%, #121215 46%, #09090b 100%);
 }
 
 .login-card {
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  background: rgba(18, 18, 22, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: var(--shadow-panel);
+  backdrop-filter: blur(10px);
+}
+
+.login-card .ant-card-body {
+  padding: 28px;
+}
+
+.login-card .ant-typography,
+.login-card .ant-typography strong {
+  color: var(--text-main);
+}
+
+.login-card .ant-typography-secondary,
+.login-card .ant-typography.ant-typography-secondary {
+  color: var(--text-soft);
+}
+
+.login-kicker {
+  display: inline-block;
+  margin-bottom: 12px;
+  color: #d5b1b1;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+}
+
+.ant-notification-notice,
+.ant-message-notice-content {
+  background: var(--bg-panel-strong) !important;
+  color: var(--text-main);
+  border: 1px solid var(--border-soft);
 }
 
 @media (max-width: 991px) {
   .app-header {
+    padding: 16px;
+  }
+
+  .app-header-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .app-header-actions {
+    width: 100%;
     justify-content: space-between;
-    padding: 0 16px;
+  }
+
+  .app-user-meta {
+    align-items: flex-start;
+    max-width: 100%;
+  }
+
+  .app-user-name,
+  .app-user-role {
+    text-align: left;
   }
 
   .app-content {

@@ -55,6 +55,7 @@ export function AppShell({ currentUser }: AppShellProps) {
           <Text type="secondary">Локальная система</Text>
         </div>
         <Menu
+          className="app-menu"
           mode="inline"
           selectedKeys={[selectedKey]}
           items={menuItems}
@@ -65,23 +66,31 @@ export function AppShell({ currentUser }: AppShellProps) {
       </Sider>
       <Layout>
         <Header className="app-header">
-          <Space size="large">
-            <div>
-              <Text strong>{currentUser.full_name}</Text>
-              <br />
-              <Text type="secondary">{ROLE_LABELS[currentUser.role]}</Text>
+          <div className="app-header-bar">
+            <div className="app-header-copy">
+              <Text className="app-header-kicker">Система электронного документооборота</Text>
             </div>
-            <Button
-              icon={<LogoutOutlined />}
-              loading={logoutMutation.isPending}
-              onClick={async () => {
-                await logoutMutation.mutateAsync();
-                await navigate("/login", { replace: true });
-              }}
-            >
-              Выход
-            </Button>
-          </Space>
+            <Space size="middle" align="center" className="app-header-actions">
+              <div className="app-user-meta">
+                <Text strong className="app-user-name">
+                  {currentUser.full_name}
+                </Text>
+                <Text type="secondary" className="app-user-role">
+                  {ROLE_LABELS[currentUser.role]}
+                </Text>
+              </div>
+              <Button
+                icon={<LogoutOutlined />}
+                loading={logoutMutation.isPending}
+                onClick={async () => {
+                  await logoutMutation.mutateAsync();
+                  await navigate("/login", { replace: true });
+                }}
+              >
+                Выход
+              </Button>
+            </Space>
+          </div>
         </Header>
         <Content className="app-content">
           <Outlet />

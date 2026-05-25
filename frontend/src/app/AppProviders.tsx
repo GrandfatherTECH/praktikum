@@ -23,8 +23,12 @@ export function AppProviders({ children }: PropsWithChildren) {
       locale={ruRU}
       theme={{
         token: {
-          colorPrimary: "#1f4b99",
-          borderRadius: 8,
+          colorPrimary: "#a12626",
+          colorInfo: "#a12626",
+          colorSuccess: "#3d8a58",
+          colorWarning: "#b07822",
+          borderRadius: 10,
+          colorBgLayout: "#0d0d10",
         },
       }}
     >

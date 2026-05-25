@@ -1,4 +1,4 @@
-import { Alert, Empty, Result, Spin } from "antd";
+import { Alert, Card, Spin, Typography } from "antd";
 import type { ReactNode } from "react";
 
 type QueryStateProps = {
@@ -27,7 +27,12 @@ export function QueryState({
   }
 
   if (forbidden) {
-    return <Result status="403" title="403" subTitle="Недостаточно прав для просмотра раздела." />;
+    return (
+      <Card className="state-card">
+        <Typography.Title level={4}>Доступ ограничен</Typography.Title>
+        <Typography.Text type="secondary">Недостаточно прав для просмотра раздела.</Typography.Text>
+      </Card>
+    );
   }
 
   if (error) {
@@ -35,7 +40,12 @@ export function QueryState({
   }
 
   if (isEmpty) {
-    return <Empty description={emptyDescription ?? "Данные отсутствуют"} />;
+    return (
+      <Card className="state-card">
+        <Typography.Title level={5}>Нет данных</Typography.Title>
+        <Typography.Text type="secondary">{emptyDescription ?? "Данные отсутствуют"}</Typography.Text>
+      </Card>
+    );
   }
 
   return <>{children}</>;
