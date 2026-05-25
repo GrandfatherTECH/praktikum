@@ -1,42 +1,29 @@
 from __future__ import annotations
 
-from logging.config import fileConfig
-import os
 import asyncio
+from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from app.core.config import settings
+from app.db.base import Base
+from app.models import audit_log, department, session, user  # noqa: F401
 
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-database_url = os.getenv("DATABASE_URL")
-if not database_url:
-    postgres_user = os.getenv("POSTGRES_USER")
-    postgres_password = os.getenv("POSTGRES_PASSWORD")
-    postgres_host = os.getenv("POSTGRES_HOST")
-    postgres_port = os.getenv("POSTGRES_PORT", "5432")
-    postgres_db = os.getenv("POSTGRES_DB")
-    if all([postgres_user, postgres_password, postgres_host, postgres_db]):
-        database_url = (
-            f"postgresql+asyncpg://{postgres_user}:{postgres_password}"
-            f"@{postgres_host}:{postgres_port}/{postgres_db}"
-        )
+config.set_main_option("sqlalchemy.url", settings.database_url)
 
-if database_url:
-    config.set_main_option("sqlalchemy.url", database_url)
-
-target_metadata = None
+target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    url = config.get_main_option("sqlalchemy.url")
     context.configure(
-        url=url,
+        url=config.get_main_option("sqlalchemy.url"),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},

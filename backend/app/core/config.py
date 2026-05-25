@@ -1,3 +1,4 @@
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,6 +18,25 @@ class Settings(BaseSettings):
 
     redis_host: str = "redis"
     redis_port: int = 6379
+
+    session_cookie_name: str = "sed_session"
+    session_cookie_secure: bool = False
+    session_cookie_samesite: str = "lax"
+    session_cookie_domain: str | None = None
+    session_ttl_hours: int = 12
+
+    password_min_length: int = 8
+
+    initial_admin_username: str = "admin"
+    initial_admin_password: str = "admin12345"
+    initial_admin_full_name: str = "System Administrator"
+
+    @property
+    def database_url(self) -> str:
+        return (
+            f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}"
+            f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+        )
 
 
 settings = Settings()

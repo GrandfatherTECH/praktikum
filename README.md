@@ -1,31 +1,55 @@
-# SED Phase 1 Skeleton
+# SED Phase 2 Backend Foundation
 
-Phase 1 keeps the system intentionally minimal: FastAPI backend, React frontend, and Docker Compose with only `backend`, `postgres`, and `redis`.
+Phase 2 implements backend foundation only: async PostgreSQL ORM, Alembic schema, server-side session auth, users/departments management with RBAC, seed data, and audit logging.
 
-## Local startup
+Architecture remains unchanged:
+- Docker Compose services: `backend`, `postgres`, `redis` only.
+- No frontend container, no frontend Dockerfile.
+- No Nginx container in this project.
+- Frontend remains non-Dockerized.
 
-1. Copy `.env.example` to `.env` and adjust credentials if needed.
-2. Start backend infrastructure:
+## Run backend stack
 
 ```bash
 docker compose up --build -d
 ```
 
-3. Check backend health:
+## Run migrations
+
+```bash
+docker compose exec backend alembic upgrade head
+```
+
+## Seed development data
+
+```bash
+docker compose exec backend python -m app.seed.seed_data
+```
+
+## Development credentials (local only)
+
+Change all passwords in production.
+
+- `admin` / `admin12345`
+- `chief` / `chief12345`
+- `dept_head` / `depthead12345`
+- `employee` / `employee12345`
+- `incoming_op` / `incoming12345`
+- `personnel` / `personnel12345`
+
+## Health check
 
 ```bash
 curl http://127.0.0.1:8000/api/v1/health
 ```
 
-Expected response:
+## Run backend tests
 
-```json
-{"status":"ok"}
+```bash
+docker compose exec backend pytest
 ```
 
-## Frontend development
-
-Frontend runs outside Docker:
+## Frontend development (outside Docker)
 
 ```bash
 cd frontend
@@ -33,51 +57,11 @@ npm install
 npm run dev
 ```
 
-Vite proxies `/api` to `http://127.0.0.1:8000`.
-
-If you run frontend without Vite proxy (for example another static server), set API URL explicitly:
-
-```bash
-cd frontend
-VITE_API_BASE_URL=http://127.0.0.1:8000 npm run dev
-```
-
-## Frontend production build
+## Frontend build (outside Docker)
 
 ```bash
 cd frontend
 npm run build
 ```
 
-Install static files by copying `frontend/dist` to `/var/www/sed/frontend`.
-
-## Production deployment
-
-Production Compose uses only `backend`, `postgres`, and `redis`:
-
-```bash
-docker compose -f docker-compose.prod.yml up -d
-```
-
-Recommended rollout script:
-
-```bash
-./deploy/scripts/deploy.sh
-```
-
-If your global Nginx runs in Docker, attach it to this app network:
-
-```bash
-docker network connect sed_app_net <global-nginx-container-name>
-```
-
-Then configure upstream to `backend:8000` (see `deploy/nginx/sed-app.example.conf`).
-
-## Important notes
-
-1. `frontend` is not Dockerized and is never started via Compose.
-2. This repository does not run an Nginx service in Compose. A global shared Nginx container is allowed if managed outside this project and connected to `sed_app_net`.
-3. PostgreSQL data is stored in a named Docker volume `sed_postgres_data` mounted at `/var/lib/postgresql`, which is the correct layout for `postgres:18+`.
-4. Local compose publishes backend on `127.0.0.1:8000`; production compose keeps backend internal (`expose 8000`) for access from shared Nginx via `sed_app_net`.
-5. Do not use `docker compose down -v` on environments where database data must be preserved.
-6. If you upgrade an existing volume from `postgres:16/17` to `postgres:18`, you must either migrate the data with `pg_upgrade` or remove the old volume for a clean dev reset.
+Deploy static files to `/var/www/sed/frontend` using `deploy/scripts/install-frontend.sh`.
