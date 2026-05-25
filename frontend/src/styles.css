@@ -354,12 +354,36 @@ body {
   border: 1px solid var(--border-soft);
 }
 
+.ant-notification-notice-wrapper .ant-notification-notice {
+  background: var(--bg-panel-strong) !important;
+  color: var(--text-main) !important;
+}
+
 .ant-notification-notice-message,
 .ant-notification-notice-description,
 .ant-notification-notice .anticon,
+.ant-notification-notice-close,
+.ant-notification-notice-close-x,
 .ant-message-custom-content,
 .ant-message-custom-content span {
   color: var(--text-main) !important;
+}
+
+.ant-notification-notice-close:hover,
+.ant-notification-notice-close-x:hover {
+  color: #fff !important;
+}
+
+.sr-only-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 @media (max-width: 991px) {

@@ -22,6 +22,7 @@ import { createDepartment, deleteDepartment, updateDepartment } from "../api/dep
 import type { Department, DepartmentCreatePayload, DepartmentUpdatePayload } from "../api/types";
 import { useCurrentUserQuery } from "../app/auth";
 import { QueryState } from "../components/QueryState";
+import { ROLE_LABELS } from "../constants/roles";
 import { applyValidationErrors, getErrorMessage } from "../utils/errors";
 import { useDepartmentsQuery, useUsersQuery } from "./hooks";
 
@@ -45,8 +46,10 @@ export function DepartmentsPage() {
 
   const userOptions = useMemo(
     () =>
-      (usersQuery.data ?? []).map((user) => ({
-        label: user.full_name,
+      (usersQuery.data ?? [])
+        .filter((user) => user.role === "DEPARTMENT_HEAD" || user.role === "CHIEF")
+        .map((user) => ({
+        label: `${user.full_name} (${ROLE_LABELS[user.role]})`,
         value: user.id,
       })),
     [usersQuery.data],

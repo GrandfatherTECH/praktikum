@@ -34,7 +34,7 @@ export function AppShell({ currentUser }: AppShellProps) {
   const logoutMutation = useLogoutMutation();
   const changePasswordMutation = useChangePasswordMutation();
   const [forcePasswordModalOpen, setForcePasswordModalOpen] = useState(currentUser.must_change_password);
-  const [passwordForm] = Form.useForm<{ current_password: string; new_password: string; confirm_password: string }>();
+  const [passwordForm] = Form.useForm<{ username: string; new_password: string; confirm_password: string }>();
   const { notification } = App.useApp();
 
   useEffect(() => {
@@ -121,12 +121,10 @@ export function AppShell({ currentUser }: AppShellProps) {
         <Form
           form={passwordForm}
           layout="vertical"
-          autoComplete="off"
+          autoComplete="on"
+          name="forced-password-change"
           onFinish={async (values) => {
-            await changePasswordMutation.mutateAsync({
-              current_password: values.current_password,
-              new_password: values.new_password,
-            });
+            await changePasswordMutation.mutateAsync({ new_password: values.new_password });
             setForcePasswordModalOpen(false);
             passwordForm.resetFields();
             notification.info({
@@ -136,13 +134,15 @@ export function AppShell({ currentUser }: AppShellProps) {
             await navigate("/login", { replace: true });
           }}
         >
-          <Form.Item
-            label="Текущий временный пароль"
-            name="current_password"
-            rules={[{ required: true, message: "Введите текущий временный пароль" }]}
-          >
-            <Input.Password autoComplete="off" />
-          </Form.Item>
+          <input
+            className="sr-only-input"
+            type="text"
+            name="username"
+            autoComplete="username"
+            readOnly
+            value={currentUser.username}
+            tabIndex={-1}
+          />
           <Form.Item
             label="Новый пароль"
             name="new_password"
@@ -169,7 +169,7 @@ export function AppShell({ currentUser }: AppShellProps) {
               }),
             ]}
           >
-            <Input.Password autoComplete="off" />
+            <Input.Password autoComplete="new-password" />
           </Form.Item>
         </Form>
       </Modal>

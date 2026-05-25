@@ -162,11 +162,15 @@ async def change_password(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ) -> MessageResponse:
-    if not verify_password(payload.current_password, current_user.password_hash):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is invalid")
+    if current_user.must_change_password:
+        current_user.password_hash = hash_password(payload.new_password)
+        current_user.must_change_password = False
+    else:
+        if not payload.current_password or not verify_password(payload.current_password, current_user.password_hash):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is invalid")
 
-    current_user.password_hash = hash_password(payload.new_password)
-    current_user.must_change_password = False
+        current_user.password_hash = hash_password(payload.new_password)
+        current_user.must_change_password = False
 
     await db.execute(
         update(Session)

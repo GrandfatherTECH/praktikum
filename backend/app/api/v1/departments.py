@@ -14,6 +14,11 @@ from app.services.audit import create_audit_log
 router = APIRouter(prefix="/departments", tags=["departments"])
 
 
+def validate_department_head_role(user: User) -> None:
+    if user.role not in (UserRole.DEPARTMENT_HEAD, UserRole.CHIEF):
+        raise HTTPException(status_code=400, detail="Head user must have CHIEF or DEPARTMENT_HEAD role")
+
+
 @router.get("", response_model=list[DepartmentRead])
 async def list_departments(
     current_user: User = Depends(get_current_user),
@@ -39,6 +44,7 @@ async def create_department(
         user = await db.get(User, payload.head_user_id)
         if not user:
             raise HTTPException(status_code=400, detail="Head user not found")
+        validate_department_head_role(user)
 
     department = Department(name=payload.name, head_user_id=payload.head_user_id, is_active=payload.is_active)
     db.add(department)
@@ -109,6 +115,7 @@ async def update_department(
         user = await db.get(User, data["head_user_id"])
         if not user:
             raise HTTPException(status_code=400, detail="Head user not found")
+        validate_department_head_role(user)
 
     before = {
         "name": department.name,

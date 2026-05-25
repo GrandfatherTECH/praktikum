@@ -58,7 +58,7 @@ export function useChangePasswordMutation() {
   return useMutation({
     mutationFn: (payload: ChangePasswordPayload) => changePassword(payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: CURRENT_USER_QUERY_KEY });
+      queryClient.setQueryData(CURRENT_USER_QUERY_KEY, null);
       notification.success({
         message: "Пароль изменен",
         description: "Войдите в систему с новым паролем.",
