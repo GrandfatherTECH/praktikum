@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from sqlalchemy import and_, select
+from sqlalchemy import and_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
@@ -10,12 +10,14 @@ from app.core.security import (
     build_session_expiry,
     generate_session_token,
     hash_session_token,
+    hash_password,
     verify_password,
 )
 from app.db.session import get_db_session
 from app.models.session import Session
 from app.models.user import User
-from app.schemas.auth import LoginRequest, LoginResponse, MeResponse
+from app.schemas.auth import ChangePasswordRequest, LoginRequest, LoginResponse, MeResponse
+from app.schemas.common import MessageResponse
 from app.services.audit import create_audit_log
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -151,3 +153,41 @@ async def logout(
 @router.get("/me", response_model=MeResponse)
 async def me(current_user: User = Depends(get_current_user)) -> MeResponse:
     return MeResponse(user=current_user)
+
+
+@router.post("/change-password", response_model=MessageResponse)
+async def change_password(
+    payload: ChangePasswordRequest,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+) -> MessageResponse:
+    if not verify_password(payload.current_password, current_user.password_hash):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is invalid")
+
+    current_user.password_hash = hash_password(payload.new_password)
+    current_user.must_change_password = False
+
+    await db.execute(
+        update(Session)
+        .where(
+            and_(
+                Session.user_id == current_user.id,
+                Session.revoked_at.is_(None),
+            )
+        )
+        .values(revoked_at=datetime.now(UTC))
+    )
+
+    await create_audit_log(
+        db,
+        actor_id=current_user.id,
+        action="password.changed",
+        entity_type="user",
+        entity_id=current_user.id,
+        after={"must_change_password": False},
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
+    await db.commit()
+    return MessageResponse(message="Password changed")

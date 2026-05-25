@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { App } from "antd";
 
-import { getCurrentUser, login, logout } from "../api/auth";
+import { changePassword, getCurrentUser, login, logout } from "../api/auth";
 import { ApiError } from "../api/client";
-import type { LoginPayload } from "../api/types";
+import type { ChangePasswordPayload, LoginPayload } from "../api/types";
 
 export const CURRENT_USER_QUERY_KEY = ["auth", "me"];
 
@@ -45,6 +45,29 @@ export function useLogoutMutation() {
       const message = error instanceof ApiError ? error.detail : "Не удалось выйти из системы.";
       notification.error({
         message: "Ошибка выхода",
+        description: message,
+      });
+    },
+  });
+}
+
+export function useChangePasswordMutation() {
+  const queryClient = useQueryClient();
+  const { notification } = App.useApp();
+
+  return useMutation({
+    mutationFn: (payload: ChangePasswordPayload) => changePassword(payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: CURRENT_USER_QUERY_KEY });
+      notification.success({
+        message: "Пароль изменен",
+        description: "Войдите в систему с новым паролем.",
+      });
+    },
+    onError: (error) => {
+      const message = error instanceof ApiError ? error.detail : "Не удалось изменить пароль.";
+      notification.error({
+        message: "Ошибка смены пароля",
         description: message,
       });
     },

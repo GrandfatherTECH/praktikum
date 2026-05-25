@@ -7,6 +7,7 @@ from app.db.session import get_db_session
 from app.models.department import Department
 from app.models.enums import UserRole
 from app.models.user import User
+from app.schemas.common import MessageResponse
 from app.schemas.department import DepartmentCreate, DepartmentRead, DepartmentUpdate
 from app.services.audit import create_audit_log
 
@@ -57,6 +58,38 @@ async def create_department(
     await db.commit()
     await db.refresh(department)
     return department
+
+
+@router.delete("/{department_id}", response_model=MessageResponse)
+async def delete_department(
+    department_id: int,
+    request: Request,
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
+    db: AsyncSession = Depends(get_db_session),
+) -> MessageResponse:
+    department = await db.get(Department, department_id)
+    if not department:
+        raise HTTPException(status_code=404, detail="Department not found")
+
+    before = {
+        "name": department.name,
+        "head_user_id": department.head_user_id,
+        "is_active": department.is_active,
+    }
+    await db.delete(department)
+
+    await create_audit_log(
+        db,
+        actor_id=current_user.id,
+        action="department.deleted",
+        entity_type="department",
+        entity_id=department_id,
+        before=before,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
+    await db.commit()
+    return MessageResponse(message="Department deleted")
 
 
 @router.patch("/{department_id}", response_model=DepartmentRead)

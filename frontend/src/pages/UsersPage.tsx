@@ -1,12 +1,14 @@
-import { CheckOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
+import { CheckOutlined, EditOutlined, KeyOutlined, PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   App,
+  Alert,
   Button,
   Card,
   Form,
   Input,
   Modal,
+  Popconfirm,
   Select,
   Space,
   Switch,
@@ -17,7 +19,7 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import { useMemo, useState } from "react";
 
-import { approveUser, createUser, updateUser } from "../api/users";
+import { approveUser, createOneTimePassword, createUser, deleteUser, updateUser } from "../api/users";
 import { ApiError } from "../api/client";
 import type { Department, User, UserCreatePayload, UserRole, UserUpdatePayload } from "../api/types";
 import { useCurrentUserQuery } from "../app/auth";
@@ -48,6 +50,7 @@ export function UsersPage() {
   const { notification } = App.useApp();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [otpModal, setOtpModal] = useState<{ user: User; password: string } | null>(null);
   const [createForm] = Form.useForm<UserFormValues>();
   const [editForm] = Form.useForm<UserFormValues>();
 
@@ -80,6 +83,23 @@ export function UsersPage() {
   const approveMutation = useMutation({
     mutationFn: approveUser,
     onSuccess: async () => commonSuccess("Пользователь подтвержден", "Доступ к системе разрешен."),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteUser,
+    onSuccess: async () => commonSuccess("Пользователь удален", "Учетная запись удалена."),
+  });
+
+  const otpMutation = useMutation({
+    mutationFn: createOneTimePassword,
+    onSuccess: async (response) => {
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      setOtpModal({ user: response.user, password: response.temporary_password });
+      notification.success({
+        message: "Одноразовый пароль создан",
+        description: "Передайте временный пароль пользователю безопасным каналом.",
+      });
+    },
   });
 
   const columns: ColumnsType<User> = [
@@ -154,6 +174,46 @@ export function UsersPage() {
             >
               Подтвердить
             </Button>
+          ) : null}
+          {currentUserQuery.data?.role === "ADMIN" ? (
+            <Button
+              icon={<KeyOutlined />}
+              loading={otpMutation.isPending}
+              onClick={async () => {
+                try {
+                  await otpMutation.mutateAsync(record.id);
+                } catch (error) {
+                  notification.error({
+                    message: "Ошибка создания временного пароля",
+                    description: getErrorMessage(error, "Не удалось создать временный пароль."),
+                  });
+                }
+              }}
+            >
+              Одноразовый пароль
+            </Button>
+          ) : null}
+          {currentUserQuery.data?.role === "ADMIN" ? (
+            <Popconfirm
+              title="Удалить пользователя?"
+              description="Действие необратимо. Все активные сессии пользователя будут прекращены."
+              okText="Удалить"
+              cancelText="Отмена"
+              onConfirm={async () => {
+                try {
+                  await deleteMutation.mutateAsync(record.id);
+                } catch (error) {
+                  notification.error({
+                    message: "Ошибка удаления",
+                    description: getErrorMessage(error, "Не удалось удалить пользователя."),
+                  });
+                }
+              }}
+            >
+              <Button danger icon={<DeleteOutlined />} loading={deleteMutation.isPending}>
+                Удалить
+              </Button>
+            </Popconfirm>
           ) : null}
         </Space>
       ),
@@ -277,6 +337,42 @@ export function UsersPage() {
         >
           <UserFormFields departmentOptions={departmentOptions} requireCredentials={false} />
         </Form>
+      </Modal>
+
+      <Modal
+        title="Одноразовый пароль"
+        open={otpModal !== null}
+        footer={
+          <Button
+            type="primary"
+            onClick={() => {
+              setOtpModal(null);
+            }}
+          >
+            Закрыть
+          </Button>
+        }
+        onCancel={() => setOtpModal(null)}
+      >
+        <Space direction="vertical" size={16} style={{ width: "100%" }}>
+          <Alert
+            type="warning"
+            showIcon
+            message="Показывается только один раз"
+            description="После закрытия окна временный пароль больше не будет доступен в интерфейсе."
+          />
+          <Typography.Text>
+            Пользователь: <strong>{otpModal?.user.full_name}</strong>
+          </Typography.Text>
+          <Card size="small">
+            <Typography.Text code copyable={{ text: otpModal?.password ?? "" }}>
+              {otpModal?.password}
+            </Typography.Text>
+          </Card>
+          <Typography.Text type="secondary">
+            После входа с этим паролем пользователь будет обязан задать новый пароль.
+          </Typography.Text>
+        </Space>
       </Modal>
     </Space>
   );

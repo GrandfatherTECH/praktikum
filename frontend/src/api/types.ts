@@ -15,6 +15,7 @@ export type User = {
   position: string | null;
   is_active: boolean;
   is_approved: boolean;
+  must_change_password: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -65,6 +66,12 @@ export type ApproveUserResponse = {
   user: User;
 };
 
+export type OneTimePasswordResponse = {
+  message: string;
+  temporary_password: string;
+  user: User;
+};
+
 export type DepartmentCreatePayload = {
   name: string;
   head_user_id: number | null;
@@ -75,4 +82,9 @@ export type DepartmentUpdatePayload = {
   name?: string;
   head_user_id?: number | null;
   is_active?: boolean;
+};
+
+export type ChangePasswordPayload = {
+  current_password: string;
+  new_password: string;
 };

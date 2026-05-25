@@ -18,3 +18,9 @@ export function updateDepartment(departmentId: number, payload: DepartmentUpdate
     body: payload,
   });
 }
+
+export function deleteDepartment(departmentId: number) {
+  return apiRequest<{ message: string }>(`/departments/${departmentId}`, {
+    method: "DELETE",
+  });
+}

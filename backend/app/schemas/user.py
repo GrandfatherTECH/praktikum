@@ -15,6 +15,7 @@ class UserRead(ORMModel):
     position: str | None
     is_active: bool
     is_approved: bool
+    must_change_password: bool
     created_at: datetime
     updated_at: datetime
 
@@ -40,4 +41,10 @@ class UserUpdate(BaseModel):
 
 class UserApproveResponse(BaseModel):
     message: str
+    user: UserRead
+
+
+class OneTimePasswordResponse(BaseModel):
+    message: str
+    temporary_password: str
     user: UserRead

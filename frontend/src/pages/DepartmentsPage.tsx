@@ -1,4 +1,4 @@
-import { EditOutlined, PlusOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   App,
@@ -7,6 +7,7 @@ import {
   Form,
   Input,
   Modal,
+  Popconfirm,
   Select,
   Space,
   Switch,
@@ -17,7 +18,7 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import { useMemo, useState } from "react";
 
-import { createDepartment, updateDepartment } from "../api/departments";
+import { createDepartment, deleteDepartment, updateDepartment } from "../api/departments";
 import type { Department, DepartmentCreatePayload, DepartmentUpdatePayload } from "../api/types";
 import { useCurrentUserQuery } from "../app/auth";
 import { QueryState } from "../components/QueryState";
@@ -75,6 +76,17 @@ export function DepartmentsPage() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: deleteDepartment,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["departments"] });
+      notification.success({
+        message: "Отдел удален",
+        description: "Запись об отделе удалена.",
+      });
+    },
+  });
+
   const columns: ColumnsType<Department> = [
     {
       title: "Название",
@@ -96,19 +108,43 @@ export function DepartmentsPage() {
       key: "actions",
       render: (_, record) =>
         canManageDepartments ? (
-          <Button
-            icon={<EditOutlined />}
-            onClick={() => {
-              setEditingDepartment(record);
-              editForm.setFieldsValue({
-                name: record.name,
-                head_user_id: record.head_user_id ?? undefined,
-                is_active: record.is_active,
-              });
-            }}
-          >
-            Изменить
-          </Button>
+          <Space wrap>
+            <Button
+              icon={<EditOutlined />}
+              onClick={() => {
+                setEditingDepartment(record);
+                editForm.setFieldsValue({
+                  name: record.name,
+                  head_user_id: record.head_user_id ?? undefined,
+                  is_active: record.is_active,
+                });
+              }}
+            >
+              Изменить
+            </Button>
+            {currentUserQuery.data?.role === "ADMIN" ? (
+              <Popconfirm
+                title="Удалить отдел?"
+                description="Пользователи этого отдела останутся без привязки к отделу."
+                okText="Удалить"
+                cancelText="Отмена"
+                onConfirm={async () => {
+                  try {
+                    await deleteMutation.mutateAsync(record.id);
+                  } catch (error) {
+                    notification.error({
+                      message: "Ошибка удаления",
+                      description: getErrorMessage(error, "Не удалось удалить отдел."),
+                    });
+                  }
+                }}
+              >
+                <Button danger icon={<DeleteOutlined />} loading={deleteMutation.isPending}>
+                  Удалить
+                </Button>
+              </Popconfirm>
+            ) : null}
+          </Space>
         ) : null,
     },
   ];

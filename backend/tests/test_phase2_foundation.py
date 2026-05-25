@@ -61,3 +61,48 @@ async def test_audit_log_created_on_login(client, users_fixture, db_session):
     result = await db_session.execute(select(func.count(AuditLog.id)).where(AuditLog.action == "login.success"))
     count = result.scalar_one()
     assert count >= 1
+
+
+async def test_admin_can_delete_user(client, users_fixture):
+    await do_login(client, "admin", "admin12345")
+    response = await client.delete(f"/api/v1/users/{users_fixture['employee'].id}")
+    assert response.status_code == 200
+
+
+async def test_admin_can_create_one_time_password_and_force_change(client, users_fixture):
+    await do_login(client, "admin", "admin12345")
+    response = await client.post(f"/api/v1/users/{users_fixture['employee'].id}/one-time-password")
+    assert response.status_code == 200
+    temporary_password = response.json()["temporary_password"]
+    assert temporary_password
+
+    client.cookies.clear()
+    response = await client.post("/api/v1/auth/login", json={"username": "employee", "password": temporary_password})
+    assert response.status_code == 200
+
+    response = await client.get("/api/v1/auth/me")
+    assert response.status_code == 200
+    assert response.json()["user"]["must_change_password"] is True
+
+
+async def test_user_can_change_password_after_one_time_password(client, users_fixture):
+    await do_login(client, "admin", "admin12345")
+    response = await client.post(f"/api/v1/users/{users_fixture['employee'].id}/one-time-password")
+    temporary_password = response.json()["temporary_password"]
+
+    client.cookies.clear()
+    response = await client.post("/api/v1/auth/login", json={"username": "employee", "password": temporary_password})
+    assert response.status_code == 200
+
+    response = await client.post(
+        "/api/v1/auth/change-password",
+        json={"current_password": temporary_password, "new_password": "employee67890"},
+    )
+    assert response.status_code == 200
+
+    response = await client.get("/api/v1/auth/me")
+    assert response.status_code == 401
+
+    client.cookies.clear()
+    response = await client.post("/api/v1/auth/login", json={"username": "employee", "password": "employee67890"})
+    assert response.status_code == 200

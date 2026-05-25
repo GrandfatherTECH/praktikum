@@ -69,9 +69,16 @@ body {
 }
 
 .app-menu.ant-menu {
-  color: var(--text-soft);
+  color: var(--text-main);
   background: transparent;
   border-inline-end: 0 !important;
+}
+
+.app-menu.ant-menu .ant-menu-item,
+.app-menu.ant-menu .ant-menu-item .ant-menu-title-content,
+.app-menu.ant-menu .ant-menu-submenu-title,
+.app-menu.ant-menu .ant-menu-submenu-title .ant-menu-title-content {
+  color: var(--text-main) !important;
 }
 
 .app-menu.ant-menu .ant-menu-item {
