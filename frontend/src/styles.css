@@ -179,6 +179,19 @@ body {
   color: var(--text-soft);
 }
 
+.app-content .ant-alert,
+.app-content .ant-alert .ant-alert-message,
+.app-content .ant-alert .ant-alert-description,
+.app-content .ant-alert .ant-alert-icon,
+.app-content .ant-alert .ant-alert-close-icon {
+  color: var(--text-main) !important;
+}
+
+.app-content .ant-alert {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: var(--border-soft) !important;
+}
+
 .app-content .ant-btn-default {
   border-color: var(--border-soft);
   background: rgba(255, 255, 255, 0.02);
@@ -356,6 +369,28 @@ body {
 
 .ant-notification-notice-wrapper .ant-notification-notice {
   background: var(--bg-panel-strong) !important;
+  color: var(--text-main) !important;
+}
+
+.ant-notification,
+.ant-notification .ant-notification-notice,
+.ant-notification .ant-notification-notice-content,
+.ant-notification .ant-notification-notice-with-icon,
+.ant-notification .ant-notification-notice-message,
+.ant-notification .ant-notification-notice-description,
+.ant-notification .ant-notification-notice-close,
+.ant-notification .ant-notification-notice-close-x,
+.ant-notification .anticon,
+.ant-notification * {
+  color: var(--text-main) !important;
+}
+
+.ant-message,
+.ant-message .ant-message-notice,
+.ant-message .ant-message-notice-content,
+.ant-message .ant-message-custom-content,
+.ant-message .anticon,
+.ant-message * {
   color: var(--text-main) !important;
 }
 
