@@ -29,6 +29,7 @@ import { useDepartmentsQuery, useUsersQuery } from "./hooks";
 type DepartmentFormValues = {
   name: string;
   head_user_id?: number;
+  member_user_ids?: number[];
   is_active: boolean;
 };
 
@@ -47,11 +48,22 @@ export function DepartmentsPage() {
   const userOptions = useMemo(
     () =>
       (usersQuery.data ?? [])
+        .filter((user) => user.is_active)
+        .map((user) => ({
+          label: `${user.full_name}${user.position ? ` (${user.position})` : ""}`,
+          value: user.id,
+        })),
+    [usersQuery.data],
+  );
+
+  const headUserOptions = useMemo(
+    () =>
+      (usersQuery.data ?? [])
         .filter((user) => user.role === "DEPARTMENT_HEAD" || user.role === "CHIEF")
         .map((user) => ({
-        label: `${user.full_name} (${ROLE_LABELS[user.role]})`,
-        value: user.id,
-      })),
+          label: `${user.full_name} (${ROLE_LABELS[user.role]})`,
+          value: user.id,
+        })),
     [usersQuery.data],
   );
 
@@ -118,6 +130,7 @@ export function DepartmentsPage() {
                 editForm.setFieldsValue({
                   name: record.name,
                   head_user_id: record.head_user_id ?? undefined,
+                  member_user_ids: (usersQuery.data ?? []).filter((user) => user.department_id === record.id).map((user) => user.id),
                   is_active: record.is_active,
                 });
               }}
@@ -207,6 +220,7 @@ export function DepartmentsPage() {
             const payload: DepartmentCreatePayload = {
               name: values.name,
               head_user_id: values.head_user_id ?? null,
+              member_user_ids: values.member_user_ids ?? [],
               is_active: values.is_active,
             };
             try {
@@ -222,7 +236,7 @@ export function DepartmentsPage() {
             }
           }}
         >
-          <DepartmentFormFields userOptions={userOptions} />
+          <DepartmentFormFields headUserOptions={headUserOptions} userOptions={userOptions} />
         </Form>
       </Modal>
 
@@ -245,6 +259,7 @@ export function DepartmentsPage() {
             const payload: DepartmentUpdatePayload = {
               name: values.name,
               head_user_id: values.head_user_id ?? null,
+              member_user_ids: values.member_user_ids ?? [],
               is_active: values.is_active,
             };
             try {
@@ -259,21 +274,30 @@ export function DepartmentsPage() {
             }
           }}
         >
-          <DepartmentFormFields userOptions={userOptions} />
+          <DepartmentFormFields headUserOptions={headUserOptions} userOptions={userOptions} />
         </Form>
       </Modal>
     </Space>
   );
 }
 
-function DepartmentFormFields({ userOptions }: { userOptions: Array<{ label: string; value: number }> }) {
+function DepartmentFormFields({
+  headUserOptions,
+  userOptions,
+}: {
+  headUserOptions: Array<{ label: string; value: number }>;
+  userOptions: Array<{ label: string; value: number }>;
+}) {
   return (
     <>
       <Form.Item label="Название" name="name" rules={[{ required: true, message: "Введите название отдела" }]}>
         <Input />
       </Form.Item>
       <Form.Item label="Руководитель" name="head_user_id">
-        <Select allowClear options={userOptions} placeholder="Не назначен" />
+        <Select allowClear options={headUserOptions} placeholder="Не назначен" />
+      </Form.Item>
+      <Form.Item label="Сотрудники отдела" name="member_user_ids">
+        <Select mode="multiple" options={userOptions} optionFilterProp="label" placeholder="Выберите сотрудников" />
       </Form.Item>
       <Form.Item label="Активен" name="is_active" valuePropName="checked">
         <Switch />

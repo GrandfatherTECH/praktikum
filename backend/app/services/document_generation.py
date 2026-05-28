@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.document import Document
 from app.models.document_file import DocumentFile
-from app.models.enums import DocumentFileKind, DocumentType
+from app.models.enums import AcknowledgementStatus, ApprovalStatus, DocumentFileKind, DocumentType
 from app.models.user import User
 from app.services.pdf import pdf_conversion_service
 from app.services.storage import ensure_parent, sha256sum, storage_root
@@ -107,8 +107,9 @@ class DocumentGenerationService:
         self._body_paragraph(doc, document.signer_name)
 
         if document.type == DocumentType.ORDER:
-            self._append_approval_sheet(doc, document)
-            self._append_acknowledgement_sheet(doc, document)
+            preview_users = await self._load_preview_users(db, data)
+            self._append_approval_sheet(doc, document, preview_users)
+            self._append_acknowledgement_sheet(doc, document, preview_users)
 
         if document.executor_name or data.get("executor_name"):
             self._body_paragraph(doc, "")
@@ -213,25 +214,7 @@ class DocumentGenerationService:
     def _format_date(self, value: date) -> str:
         return value.strftime("%d.%m.%Y")
 
-    def _append_approval_sheet(self, document: DocxDocument, source: Document) -> None:
-        document.add_page_break()
-        self._center_paragraph(document, "ЛИСТ СОГЛАСОВАНИЯ", bold=True, size=14)
-        table = document.add_table(rows=1, cols=5)
-        table.alignment = WD_TABLE_ALIGNMENT.CENTER
-        table.style = "Table Grid"
-        headers = ["№", "Должность, ФИО", "Статус", "Комментарий", "Дата"]
-        self._fill_header_row(table.rows[0].cells, headers)
-        for step in source.approval_steps:
-            row = table.add_row().cells
-            approver = step.approver
-            row[0].text = str(step.step_order)
-            row[1].text = self._person_label(approver, step.approver_id)
-            row[2].text = step.status.value
-            row[3].text = step.comment or ""
-            row[4].text = step.acted_at.strftime("%d.%m.%Y %H:%M") if step.acted_at else ""
-            self._format_row(row)
-
-    def _append_acknowledgement_sheet(self, document: DocxDocument, source: Document) -> None:
+    def _append_acknowledgement_sheet(self, document: DocxDocument, source: Document, preview_users: dict[int, User]) -> None:
         document.add_page_break()
         self._center_paragraph(document, "ЛИСТ ОЗНАКОМЛЕНИЯ", bold=True, size=14)
         table = document.add_table(rows=1, cols=5)
@@ -239,15 +222,79 @@ class DocumentGenerationService:
         table.style = "Table Grid"
         headers = ["№", "ФИО", "Должность", "Статус", "Дата"]
         self._fill_header_row(table.rows[0].cells, headers)
-        for index, ack in enumerate(source.acknowledgements, start=1):
+        acknowledgements = source.acknowledgements
+        if not acknowledgements:
+            fallback_ids = source.structured_data.get("acknowledgement_people", [])
+            acknowledgements = [
+                type(
+                    "AckPreview",
+                    (),
+                    {
+                        "user_id": user_id,
+                        "status": AcknowledgementStatus.PENDING,
+                        "acknowledged_at": None,
+                        "user": preview_users.get(user_id),
+                    },
+                )()
+                for user_id in fallback_ids
+            ]
+        for index, ack in enumerate(acknowledgements, start=1):
             row = table.add_row().cells
-            user = ack.user
+            user = ack.user or preview_users.get(ack.user_id)
             row[0].text = str(index)
             row[1].text = user.full_name if user else f"Пользователь #{ack.user_id}"
             row[2].text = user.position if user and user.position else "-"
             row[3].text = ack.status.value
             row[4].text = ack.acknowledged_at.strftime("%d.%m.%Y %H:%M") if ack.acknowledged_at else ""
             self._format_row(row)
+
+    def _append_approval_sheet(self, document: DocxDocument, source: Document, preview_users: dict[int, User]) -> None:
+        document.add_page_break()
+        self._center_paragraph(document, "ЛИСТ СОГЛАСОВАНИЯ", bold=True, size=14)
+        table = document.add_table(rows=1, cols=5)
+        table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        table.style = "Table Grid"
+        headers = ["№", "Должность, ФИО", "Статус", "Комментарий", "Дата"]
+        self._fill_header_row(table.rows[0].cells, headers)
+        approval_steps = source.approval_steps
+        if not approval_steps:
+            fallback_ids = source.structured_data.get("approval_people", [])
+            approval_steps = [
+                type(
+                    "StepPreview",
+                    (),
+                    {
+                        "step_order": index,
+                        "approver_id": approver_id,
+                        "status": ApprovalStatus.WAITING if index == 1 else ApprovalStatus.PENDING,
+                        "comment": "",
+                        "acted_at": None,
+                        "approver": preview_users.get(approver_id),
+                    },
+                )()
+                for index, approver_id in enumerate(fallback_ids, start=1)
+            ]
+        for step in approval_steps:
+            row = table.add_row().cells
+            approver = step.approver or preview_users.get(step.approver_id)
+            row[0].text = str(step.step_order)
+            row[1].text = self._person_label(approver, step.approver_id)
+            row[2].text = step.status.value
+            row[3].text = step.comment or ""
+            row[4].text = step.acted_at.strftime("%d.%m.%Y %H:%M") if step.acted_at else ""
+            self._format_row(row)
+
+    async def _load_preview_users(self, db: AsyncSession, structured_data: dict) -> dict[int, User]:
+        user_ids = list(
+            dict.fromkeys(
+                [*structured_data.get("approval_people", []), *structured_data.get("acknowledgement_people", [])]
+            )
+        )
+        if not user_ids:
+            return {}
+        result = await db.execute(select(User).where(User.id.in_(user_ids)))
+        users = result.scalars().all()
+        return {user.id: user for user in users}
 
     def _fill_header_row(self, cells, values: list[str]) -> None:
         for cell, value in zip(cells, values, strict=False):

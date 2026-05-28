@@ -336,6 +336,50 @@ body {
   border-color: rgba(255, 255, 255, 0.12);
 }
 
+.app-content .ant-tag,
+.app-content .ant-tag * {
+  color: #f2f2f3 !important;
+}
+
+.app-content .ant-tag-blue,
+.app-content .ant-tag-green,
+.app-content .ant-tag-orange,
+.app-content .ant-tag-red,
+.app-content .ant-tag-gold,
+.app-content .ant-tag-magenta,
+.app-content .ant-tag-purple,
+.app-content .ant-tag-cyan,
+.app-content .ant-tag-lime,
+.app-content .ant-tag-geekblue,
+.app-content .ant-tag-volcano {
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+.app-content .ant-tag-blue {
+  background: #2957b8 !important;
+}
+
+.app-content .ant-tag-green {
+  background: #2a8a4b !important;
+}
+
+.app-content .ant-tag-orange,
+.app-content .ant-tag-gold,
+.app-content .ant-tag-volcano {
+  background: #9e5a12 !important;
+}
+
+.app-content .ant-tag-red,
+.app-content .ant-tag-magenta {
+  background: #a62c2c !important;
+}
+
+.app-content .ant-tag-purple,
+.app-content .ant-tag-geekblue {
+  background: #6142a8 !important;
+}
+
 .app-content .ant-select-multiple .ant-select-selection-item {
   background: rgba(161, 38, 38, 0.22) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;

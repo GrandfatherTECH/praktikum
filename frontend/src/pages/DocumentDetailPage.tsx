@@ -15,6 +15,7 @@ import {
   returnForRevision,
   sendForAcknowledgement,
 } from "../api/documents";
+import type { Acknowledgement, ApprovalStep } from "../api/types";
 import { QueryState } from "../components/QueryState";
 import { getErrorMessage } from "../utils/errors";
 import { DOCUMENT_STATUS_LABELS, DOCUMENT_TYPE_LABELS } from "./documentHelpers";
@@ -113,6 +114,48 @@ export function DocumentDetailPage() {
     [departmentsQuery.data],
   );
   const structuredData = documentQuery.data?.structured_data ?? {};
+  const approvalStepsPreview = useMemo<ApprovalStep[]>(() => {
+    if (!documentQuery.data) {
+      return [];
+    }
+    if (documentQuery.data.approval_steps.length > 0) {
+      return documentQuery.data.approval_steps;
+    }
+    const approvalIds = Array.isArray(structuredData.approval_people) ? (structuredData.approval_people as number[]) : [];
+    return approvalIds.map((approverId, index) => {
+      const approver = usersQuery.data?.find((user) => user.id === approverId) ?? null;
+      return {
+        id: -1_000_000 - approverId - index,
+        step_order: index + 1,
+        approver_id: approverId,
+        status: (index === 0 ? "WAITING" : "PENDING") as ApprovalStep["status"],
+        comment: null,
+        acted_at: null,
+        approver,
+      };
+    });
+  }, [documentQuery.data, structuredData.approval_people, usersQuery.data]);
+  const acknowledgementsPreview = useMemo<Acknowledgement[]>(() => {
+    if (!documentQuery.data) {
+      return [];
+    }
+    if (documentQuery.data.acknowledgements.length > 0) {
+      return documentQuery.data.acknowledgements;
+    }
+    const acknowledgementIds = Array.isArray(structuredData.acknowledgement_people)
+      ? (structuredData.acknowledgement_people as number[])
+      : [];
+    return acknowledgementIds.map((userId, index) => {
+      const user = usersQuery.data?.find((item) => item.id === userId) ?? null;
+      return {
+        id: -2_000_000 - userId - index,
+        user_id: userId,
+        status: "PENDING" as Acknowledgement["status"],
+        acknowledged_at: null,
+        user,
+      };
+    });
+  }, [documentQuery.data, structuredData.acknowledgement_people, usersQuery.data]);
 
   return (
     <QueryState
@@ -199,7 +242,7 @@ export function DocumentDetailPage() {
             <Table
               rowKey="id"
               pagination={false}
-              dataSource={documentQuery.data.approval_steps}
+              dataSource={approvalStepsPreview}
               columns={[
                 { title: "Шаг", dataIndex: "step_order", key: "step_order", width: 80 },
                 {
@@ -217,7 +260,7 @@ export function DocumentDetailPage() {
             <Table
               rowKey="id"
               pagination={false}
-              dataSource={documentQuery.data.acknowledgements}
+              dataSource={acknowledgementsPreview}
               columns={[
                 {
                   title: "Сотрудник",

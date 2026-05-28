@@ -60,6 +60,7 @@ export type Department = {
   id: number;
   name: string;
   head_user_id: number | null;
+  member_user_ids: number[];
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -111,12 +112,14 @@ export type OneTimePasswordResponse = {
 export type DepartmentCreatePayload = {
   name: string;
   head_user_id: number | null;
+  member_user_ids: number[];
   is_active: boolean;
 };
 
 export type DepartmentUpdatePayload = {
   name?: string;
   head_user_id?: number | null;
+  member_user_ids?: number[] | null;
   is_active?: boolean;
 };
 

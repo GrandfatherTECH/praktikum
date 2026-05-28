@@ -82,7 +82,6 @@ export function OrderBuilderPage() {
       const data = documentQuery.data.structured_data as Record<string, unknown>;
       form.setFieldsValue({
         title: documentQuery.data.title,
-        department_id: documentQuery.data.department_id,
         registered_number: documentQuery.data.registered_number ?? undefined,
         registered_date: documentQuery.data.registered_date ?? undefined,
         document_date: documentQuery.data.document_date ?? undefined,
@@ -211,9 +210,6 @@ function OrderBuilderInner({ title, form, departmentOptions, userOptions, onSave
                 <Input />
               </Form.Item>
             </Space.Compact>
-            <Form.Item label="Отдел" name="department_id">
-              <Select allowClear options={departmentOptions} />
-            </Form.Item>
             <Space.Compact block>
               <Form.Item label="Должность подписанта" name="signer_position" style={{ flex: 1 }} rules={[{ required: true }]}>
                 <Input />

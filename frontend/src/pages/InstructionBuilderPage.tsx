@@ -63,7 +63,6 @@ export function InstructionBuilderPage() {
       const data = documentQuery.data.structured_data as Record<string, unknown>;
       form.setFieldsValue({
         title: documentQuery.data.title,
-        department_id: documentQuery.data.department_id,
         registered_number: documentQuery.data.registered_number ?? undefined,
         document_date: documentQuery.data.document_date ?? undefined,
         city: documentQuery.data.city,
@@ -195,9 +194,6 @@ function InstructionBuilderInner({
               <Input />
             </Form.Item>
           </Space.Compact>
-          <Form.Item label="Отдел" name="department_id">
-            <Select allowClear options={departmentOptions} />
-          </Form.Item>
           <Space.Compact block>
             <Form.Item label="Должность подписанта" name="signer_position" style={{ flex: 1 }} rules={[{ required: true }]}>
               <Input />
@@ -234,7 +230,7 @@ function InstructionBuilderInner({
           <Form.Item label="Исполнители" name={["structured_data", "participants"]}>
             <Select mode="multiple" options={userOptions} optionFilterProp="label" />
           </Form.Item>
-          <Form.Item label="Отделы-участники" name={["structured_data", "participant_departments"]}>
+          <Form.Item label="Отделы для ознакомления" name={["structured_data", "participant_departments"]}>
             <Select mode="multiple" options={departmentOptions} optionFilterProp="label" />
           </Form.Item>
           <Form.Item label="Контроль исполнения" name={["structured_data", "control_assignee_text"]} rules={[{ required: true }]}>
