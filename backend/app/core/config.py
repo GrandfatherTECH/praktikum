@@ -18,6 +18,8 @@ class Settings(BaseSettings):
 
     redis_host: str = "redis"
     redis_port: int = 6379
+    storage_root: str = "/app/storage"
+    libreoffice_binary: str = "soffice"
 
     session_cookie_name: str = "sed_session"
     session_cookie_secure: bool = False
