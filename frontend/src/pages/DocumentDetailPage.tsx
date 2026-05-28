@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { App, Button, Card, Descriptions, Form, Input, List, Modal, Select, Space, Table, Tag, Typography } from "antd";
+import { App, Button, Card, Descriptions, Form, Input, Modal, Select, Space, Table, Tag, Typography } from "antd";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -112,6 +112,7 @@ export function DocumentDetailPage() {
     () => (departmentsQuery.data ?? []).map((department) => ({ label: department.name, value: department.id })),
     [departmentsQuery.data],
   );
+  const structuredData = documentQuery.data?.structured_data ?? {};
 
   return (
     <QueryState
@@ -182,6 +183,7 @@ export function DocumentDetailPage() {
               <Descriptions.Item label="Отдел">{documentQuery.data.department?.name ?? "Не указан"}</Descriptions.Item>
               <Descriptions.Item label="Дата документа">{documentQuery.data.document_date ?? "-"}</Descriptions.Item>
               <Descriptions.Item label="Номер">{documentQuery.data.registered_number ?? "-"}</Descriptions.Item>
+              <Descriptions.Item label="Город">{documentQuery.data.city}</Descriptions.Item>
               <Descriptions.Item label="Организация">{documentQuery.data.organization_name}</Descriptions.Item>
               <Descriptions.Item label="Подписант">{`${documentQuery.data.signer_position}, ${documentQuery.data.signer_name}`}</Descriptions.Item>
               <Descriptions.Item label="Исполнитель">{documentQuery.data.executor_name ?? "-"}</Descriptions.Item>
@@ -189,30 +191,47 @@ export function DocumentDetailPage() {
             </Descriptions>
           </Card>
 
-          <Card title="Структурированные данные">
-            <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>{JSON.stringify(documentQuery.data.structured_data, null, 2)}</pre>
+          <Card title="Содержимое документа">
+            {renderStructuredDocument(documentQuery.data.type, structuredData)}
           </Card>
 
-          <Card title="Маршрут согласования">
-            <List
+          <Card title="Статус согласования">
+            <Table
+              rowKey="id"
+              pagination={false}
               dataSource={documentQuery.data.approval_steps}
-              renderItem={(item) => (
-                <List.Item>
-                  {item.step_order}. {item.approver?.full_name ?? item.approver_id} - {item.status}
-                  {item.comment ? ` (${item.comment})` : ""}
-                </List.Item>
-              )}
+              columns={[
+                { title: "Шаг", dataIndex: "step_order", key: "step_order", width: 80 },
+                {
+                  title: "Согласующий",
+                  key: "approver",
+                  render: (_, record) => record.approver?.full_name ?? `Пользователь #${record.approver_id}`,
+                },
+                { title: "Статус", dataIndex: "status", key: "status", width: 180 },
+                { title: "Комментарий", dataIndex: "comment", key: "comment" },
+              ]}
             />
           </Card>
 
-          <Card title="Лист ознакомления">
-            <List
+          <Card title="Статус ознакомления">
+            <Table
+              rowKey="id"
+              pagination={false}
               dataSource={documentQuery.data.acknowledgements}
-              renderItem={(item) => (
-                <List.Item>
-                  {item.user?.full_name ?? item.user_id} - {item.status}
-                </List.Item>
-              )}
+              columns={[
+                {
+                  title: "Сотрудник",
+                  key: "user",
+                  render: (_, record) => record.user?.full_name ?? `Пользователь #${record.user_id}`,
+                },
+                {
+                  title: "Должность",
+                  key: "position",
+                  render: (_, record) => record.user?.position ?? "-",
+                },
+                { title: "Статус", dataIndex: "status", key: "status", width: 180 },
+                { title: "Дата", dataIndex: "acknowledged_at", key: "acknowledged_at", width: 200 },
+              ]}
             />
           </Card>
 
@@ -243,7 +262,8 @@ export function DocumentDetailPage() {
             <iframe
               title="PDF Preview"
               src={previewDocumentUrl(documentQuery.data.id)}
-              style={{ width: "100%", minHeight: 720, border: "1px solid #d9d9d9", borderRadius: 8 }}
+              className="document-preview-frame"
+              style={{ width: "100%", minHeight: 720 }}
             />
           </Card>
 
@@ -286,4 +306,53 @@ export function DocumentDetailPage() {
       ) : null}
     </QueryState>
   );
+}
+
+function renderStructuredDocument(documentType: string, structuredData: Record<string, unknown>) {
+  if (documentType === "ORDER") {
+    const orderItems = Array.isArray(structuredData.order_items) ? structuredData.order_items : [];
+    return (
+      <Space direction="vertical" size={16} style={{ width: "100%" }}>
+        <Descriptions bordered size="small" column={1}>
+          <Descriptions.Item label="Тема приказа">{String(structuredData.order_subject ?? "-")}</Descriptions.Item>
+          <Descriptions.Item label="Правовое основание">{String(structuredData.legal_basis_text ?? "-")}</Descriptions.Item>
+          <Descriptions.Item label="Цель">{String(structuredData.purpose_text ?? "-")}</Descriptions.Item>
+          <Descriptions.Item label="Контроль исполнения">{String(structuredData.control_assignee_text ?? "-")}</Descriptions.Item>
+        </Descriptions>
+        <Table
+          rowKey={(record) => String(record.key)}
+          pagination={false}
+          dataSource={orderItems.map((item, index) => ({ key: index + 1, index: index + 1, text: String(item) }))}
+          columns={[
+            { title: "№", dataIndex: "index", key: "index", width: 80 },
+            { title: "Пункт приказа", dataIndex: "text", key: "text" },
+          ]}
+        />
+      </Space>
+    );
+  }
+
+  if (documentType === "INSTRUCTION") {
+    const instructionItems = Array.isArray(structuredData.instruction_items) ? structuredData.instruction_items : [];
+    return (
+      <Space direction="vertical" size={16} style={{ width: "100%" }}>
+        <Descriptions bordered size="small" column={1}>
+          <Descriptions.Item label="Тема">{String(structuredData.instruction_subject ?? "-")}</Descriptions.Item>
+          <Descriptions.Item label="Цель">{String(structuredData.purpose_text ?? "-")}</Descriptions.Item>
+          <Descriptions.Item label="Контроль исполнения">{String(structuredData.control_assignee_text ?? "-")}</Descriptions.Item>
+        </Descriptions>
+        <Table
+          rowKey={(record) => String(record.key)}
+          pagination={false}
+          dataSource={instructionItems.map((item, index) => ({ key: index + 1, index: index + 1, text: String(item) }))}
+          columns={[
+            { title: "№", dataIndex: "index", key: "index", width: 80 },
+            { title: "Пункт приказания", dataIndex: "text", key: "text" },
+          ]}
+        />
+      </Space>
+    );
+  }
+
+  return <pre className="document-structured-json">{JSON.stringify(structuredData, null, 2)}</pre>;
 }

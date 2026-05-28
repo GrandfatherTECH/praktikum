@@ -10,3 +10,4 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 };
 
 export const ADMIN_ROLES: UserRole[] = ["ADMIN", "CHIEF"];
+export const CHIEF_MANAGED_ROLES: UserRole[] = ["DEPARTMENT_HEAD", "EMPLOYEE", "INCOMING_DOC_OPERATOR", "PERSONNEL_OFFICE"];

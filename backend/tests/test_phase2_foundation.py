@@ -61,16 +61,17 @@ async def test_users_list_available_for_authenticated_employee(client, users_fix
     assert len(response.json()) >= 3
 
 
-async def test_chief_cannot_edit_user(client, users_fixture):
+async def test_chief_can_edit_user_department(client, users_fixture):
     await do_login(client, "chief", "chief12345")
     response = await client.patch(
         f"/api/v1/users/{users_fixture['employee'].id}",
-        json={"full_name": "Changed Name"},
+        json={"full_name": "Changed Name", "department_id": users_fixture["second_department"].id},
     )
-    assert response.status_code == 403
+    assert response.status_code == 200
+    assert response.json()["department_id"] == users_fixture["second_department"].id
 
 
-async def test_chief_can_approve_but_cannot_create_user(client, users_fixture):
+async def test_chief_can_approve_and_create_user(client, users_fixture):
     await do_login(client, "chief", "chief12345")
     approve_response = await client.post(f"/api/v1/users/{users_fixture['unapproved'].id}/approve")
     assert approve_response.status_code == 200
@@ -85,7 +86,13 @@ async def test_chief_can_approve_but_cannot_create_user(client, users_fixture):
             "is_active": True,
         },
     )
-    assert create_response.status_code == 403
+    assert create_response.status_code == 201
+
+
+async def test_admin_cannot_approve_user(client, users_fixture):
+    await do_login(client, "admin", "admin12345")
+    response = await client.post(f"/api/v1/users/{users_fixture['unapproved'].id}/approve")
+    assert response.status_code == 403
 
 
 async def test_audit_log_created_on_login(client, users_fixture, db_session):

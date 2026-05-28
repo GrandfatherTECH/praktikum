@@ -231,8 +231,8 @@ export type BaseDocumentPayload = {
   registered_number?: string | null;
   registered_date?: string | null;
   document_date?: string | null;
-  city: string;
-  organization_name: string;
+  city?: string;
+  organization_name?: string;
   signer_position: string;
   signer_name: string;
   executor_name?: string | null;

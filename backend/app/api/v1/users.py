@@ -19,6 +19,15 @@ from app.services.audit import create_audit_log
 router = APIRouter(prefix="/users", tags=["users"])
 
 
+def _ensure_user_management_allowed(current_user: User, role: UserRole) -> None:
+    if current_user.role == UserRole.ADMIN:
+        return
+    if current_user.role != UserRole.CHIEF:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    if role in {UserRole.ADMIN, UserRole.CHIEF}:
+        raise HTTPException(status_code=403, detail="Chief cannot assign ADMIN or CHIEF role")
+
+
 @router.get("", response_model=list[UserRead])
 async def list_users(
     _: User = Depends(get_current_user),
@@ -32,9 +41,10 @@ async def list_users(
 async def create_user(
     payload: UserCreate,
     request: Request,
-    current_user: User = Depends(require_roles(UserRole.ADMIN)),
+    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.CHIEF)),
     db: AsyncSession = Depends(get_db_session),
 ) -> UserRead:
+    _ensure_user_management_allowed(current_user, payload.role)
     existing = await db.execute(select(User).where(User.username == payload.username))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=409, detail="Username already exists")
@@ -157,7 +167,7 @@ async def create_one_time_password(
 async def approve_user(
     user_id: int,
     request: Request,
-    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.CHIEF)),
+    current_user: User = Depends(require_roles(UserRole.CHIEF)),
     db: AsyncSession = Depends(get_db_session),
 ) -> UserApproveResponse:
     user = await db.get(User, user_id)
@@ -187,7 +197,7 @@ async def update_user(
     user_id: int,
     payload: UserUpdate,
     request: Request,
-    current_user: User = Depends(require_roles(UserRole.ADMIN)),
+    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.CHIEF)),
     db: AsyncSession = Depends(get_db_session),
 ) -> UserRead:
     user = await db.get(User, user_id)
@@ -195,6 +205,10 @@ async def update_user(
         raise HTTPException(status_code=404, detail="User not found")
 
     data = payload.model_dump(exclude_unset=True)
+    if current_user.role == UserRole.CHIEF and "is_approved" in data:
+        data.pop("is_approved")
+    target_role = data.get("role", user.role)
+    _ensure_user_management_allowed(current_user, target_role)
     if "department_id" in data and data["department_id"] is not None:
         dept = await db.get(Department, data["department_id"])
         if not dept:

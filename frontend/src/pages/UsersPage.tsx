@@ -24,7 +24,7 @@ import { ApiError } from "../api/client";
 import type { Department, User, UserCreatePayload, UserRole, UserUpdatePayload } from "../api/types";
 import { useCurrentUserQuery } from "../app/auth";
 import { QueryState } from "../components/QueryState";
-import { ADMIN_ROLES, ROLE_LABELS } from "../constants/roles";
+import { CHIEF_MANAGED_ROLES, ROLE_LABELS } from "../constants/roles";
 import { applyValidationErrors, getErrorMessage } from "../utils/errors";
 import { useDepartmentsQuery, useUsersQuery } from "./hooks";
 
@@ -54,8 +54,11 @@ export function UsersPage() {
   const [createForm] = Form.useForm<UserFormValues>();
   const [editForm] = Form.useForm<UserFormValues>();
 
-  const canApproveUsers = ADMIN_ROLES.includes(currentUserQuery.data?.role ?? "EMPLOYEE");
-  const canAdminUsers = currentUserQuery.data?.role === "ADMIN";
+  const currentRole = currentUserQuery.data?.role ?? "EMPLOYEE";
+  const canApproveUsers = currentRole === "CHIEF";
+  const canCreateUsers = currentRole === "ADMIN" || currentRole === "CHIEF";
+  const canManageUsers = currentRole === "ADMIN" || currentRole === "CHIEF";
+  const canAdminUsers = currentRole === "ADMIN";
 
   const departmentOptions = useMemo(
     () =>
@@ -141,7 +144,7 @@ export function UsersPage() {
       key: "actions",
       render: (_, record) => (
         <Space wrap>
-          {canAdminUsers ? (
+          {canManageUsers ? (
             <Button
               icon={<EditOutlined />}
               onClick={() => {
@@ -232,7 +235,7 @@ export function UsersPage() {
             <Typography.Title level={3}>Пользователи</Typography.Title>
             <Typography.Text type="secondary">Управление учетными записями и подтверждением доступа.</Typography.Text>
           </div>
-          {canAdminUsers ? (
+          {canCreateUsers ? (
             <Button
               type="primary"
               icon={<PlusOutlined />}
@@ -295,7 +298,7 @@ export function UsersPage() {
             }
           }}
         >
-          <UserFormFields departmentOptions={departmentOptions} requireCredentials={true} />
+          <UserFormFields currentRole={currentRole} departmentOptions={departmentOptions} requireCredentials={true} />
         </Form>
       </Modal>
 
@@ -335,7 +338,7 @@ export function UsersPage() {
             }
           }}
         >
-          <UserFormFields departmentOptions={departmentOptions} requireCredentials={false} />
+          <UserFormFields currentRole={currentRole} departmentOptions={departmentOptions} requireCredentials={false} />
         </Form>
       </Modal>
 
@@ -379,12 +382,20 @@ export function UsersPage() {
 }
 
 function UserFormFields({
+  currentRole,
   departmentOptions,
   requireCredentials,
 }: {
+  currentRole: User["role"];
   departmentOptions: Array<{ label: string; value: number }>;
   requireCredentials: boolean;
 }) {
+  const roleOptions = (currentRole === "ADMIN"
+    ? Object.entries(ROLE_LABELS)
+    : Object.entries(ROLE_LABELS).filter(([value]) => CHIEF_MANAGED_ROLES.includes(value as User["role"]))).map(
+    ([value, label]) => ({ value, label }),
+  );
+
   return (
     <>
       <Form.Item label="ФИО" name="full_name" rules={[{ required: true, message: "Введите ФИО" }]}>
@@ -408,7 +419,7 @@ function UserFormFields({
         </>
       ) : null}
       <Form.Item label="Роль" name="role" rules={[{ required: true, message: "Выберите роль" }]}>
-        <Select options={Object.entries(ROLE_LABELS).map(([value, label]) => ({ value, label }))} />
+        <Select options={roleOptions} />
       </Form.Item>
       <Form.Item label="Отдел" name="department_id">
         <Select allowClear options={departmentOptions} placeholder="Не назначен" />

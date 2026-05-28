@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     redis_port: int = 6379
     storage_root: str = "/app/storage"
     libreoffice_binary: str = "soffice"
+    default_document_city: str = "г. Екатеринбург"
+    default_document_organization_name: str = "ФГКОУ «Екатеринбургское суворовское военное училище»"
 
     session_cookie_name: str = "sed_session"
     session_cookie_secure: bool = False

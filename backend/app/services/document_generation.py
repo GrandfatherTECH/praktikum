@@ -5,7 +5,9 @@ from pathlib import Path
 from shutil import copy2
 
 from docx import Document as DocxDocument
+from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
 from fastapi import HTTPException, status
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,8 +37,7 @@ class DocumentGenerationService:
         return await self._generate_main_document(db, document, current_user, title_text="П Р И К А З А Н И Е", command_text="П Р И К А З Ы В А Ю:")
 
     async def generate_order_extract_docx(self, db: AsyncSession, document: Document, current_user: User) -> list[DocumentFile]:
-        generated_files = await self._delete_existing_generated_files(db, document.id, {DocumentFileKind.EXTRACT_DOCX, DocumentFileKind.EXTRACT_PDF})
-        _ = generated_files
+        await self._delete_existing_generated_files(db, document.id, {DocumentFileKind.EXTRACT_DOCX, DocumentFileKind.EXTRACT_PDF})
 
         doc = DocxDocument()
         self._apply_base_style(doc)
@@ -106,16 +107,8 @@ class DocumentGenerationService:
         self._body_paragraph(doc, document.signer_name)
 
         if document.type == DocumentType.ORDER:
-            self._body_paragraph(doc, "")
-            self._body_paragraph(doc, "Лист согласования", bold=True)
-            for step in document.approval_steps:
-                approver_name = step.approver.full_name if step.approver else f"Пользователь #{step.approver_id}"
-                self._body_paragraph(doc, f"{step.step_order}. {approver_name} - {step.status.value}")
-            self._body_paragraph(doc, "")
-            self._body_paragraph(doc, "Лист ознакомления", bold=True)
-            for ack in document.acknowledgements:
-                user_name = ack.user.full_name if ack.user else f"Пользователь #{ack.user_id}"
-                self._body_paragraph(doc, f"{user_name} - {ack.status.value}")
+            self._append_approval_sheet(doc, document)
+            self._append_acknowledgement_sheet(doc, document)
 
         if document.executor_name or data.get("executor_name"):
             self._body_paragraph(doc, "")
@@ -198,7 +191,7 @@ class DocumentGenerationService:
     def _apply_base_style(self, document: DocxDocument) -> None:
         style = document.styles["Normal"]
         style.font.name = "Times New Roman"
-        style.font.size = None
+        style.font.size = Pt(14)
 
     def _center_paragraph(self, document: DocxDocument, text: str, *, bold: bool = False, size: int = 14) -> None:
         paragraph = document.add_paragraph()
@@ -206,16 +199,85 @@ class DocumentGenerationService:
         run = paragraph.add_run(text)
         run.bold = bold
         run.font.name = "Times New Roman"
-        run.font.size = None
+        run.font.size = Pt(size)
 
     def _body_paragraph(self, document: DocxDocument, text: str, *, bold: bool = False) -> None:
         paragraph = document.add_paragraph()
+        paragraph.paragraph_format.first_line_indent = Pt(20)
+        paragraph.paragraph_format.space_after = Pt(0)
         run = paragraph.add_run(text)
         run.bold = bold
         run.font.name = "Times New Roman"
+        run.font.size = Pt(14)
 
     def _format_date(self, value: date) -> str:
         return value.strftime("%d.%m.%Y")
+
+    def _append_approval_sheet(self, document: DocxDocument, source: Document) -> None:
+        document.add_page_break()
+        self._center_paragraph(document, "ЛИСТ СОГЛАСОВАНИЯ", bold=True, size=14)
+        table = document.add_table(rows=1, cols=5)
+        table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        table.style = "Table Grid"
+        headers = ["№", "Должность, ФИО", "Статус", "Комментарий", "Дата"]
+        self._fill_header_row(table.rows[0].cells, headers)
+        for step in source.approval_steps:
+            row = table.add_row().cells
+            approver = step.approver
+            row[0].text = str(step.step_order)
+            row[1].text = self._person_label(approver, step.approver_id)
+            row[2].text = step.status.value
+            row[3].text = step.comment or ""
+            row[4].text = step.acted_at.strftime("%d.%m.%Y %H:%M") if step.acted_at else ""
+            self._format_row(row)
+
+    def _append_acknowledgement_sheet(self, document: DocxDocument, source: Document) -> None:
+        document.add_page_break()
+        self._center_paragraph(document, "ЛИСТ ОЗНАКОМЛЕНИЯ", bold=True, size=14)
+        table = document.add_table(rows=1, cols=5)
+        table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        table.style = "Table Grid"
+        headers = ["№", "ФИО", "Должность", "Статус", "Дата"]
+        self._fill_header_row(table.rows[0].cells, headers)
+        for index, ack in enumerate(source.acknowledgements, start=1):
+            row = table.add_row().cells
+            user = ack.user
+            row[0].text = str(index)
+            row[1].text = user.full_name if user else f"Пользователь #{ack.user_id}"
+            row[2].text = user.position if user and user.position else "-"
+            row[3].text = ack.status.value
+            row[4].text = ack.acknowledged_at.strftime("%d.%m.%Y %H:%M") if ack.acknowledged_at else ""
+            self._format_row(row)
+
+    def _fill_header_row(self, cells, values: list[str]) -> None:
+        for cell, value in zip(cells, values, strict=False):
+            cell.text = value
+            self._format_cell(cell, bold=True, centered=True)
+
+    def _format_row(self, cells) -> None:
+        for index, cell in enumerate(cells):
+            self._format_cell(cell, centered=index != 1)
+
+    def _format_cell(self, cell, *, bold: bool = False, centered: bool = False) -> None:
+        cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+        paragraph = cell.paragraphs[0]
+        paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER if centered else WD_ALIGN_PARAGRAPH.LEFT
+        paragraph.paragraph_format.space_after = Pt(0)
+        for run in paragraph.runs:
+            run.font.name = "Times New Roman"
+            run.font.size = Pt(12)
+            run.bold = bold
+        if not paragraph.runs:
+            run = paragraph.add_run("")
+            run.font.name = "Times New Roman"
+            run.font.size = Pt(12)
+            run.bold = bold
+
+    def _person_label(self, approver: User | None, approver_id: int) -> str:
+        if approver is None:
+            return f"Пользователь #{approver_id}"
+        position = f"{approver.position}, " if approver.position else ""
+        return f"{position}{approver.full_name}"
 
 
 document_generation_service = DocumentGenerationService()

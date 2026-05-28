@@ -52,7 +52,9 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
 @pytest.fixture()
 async def users_fixture(db_session):
     dept = Department(name="Тестовый отдел", is_active=True)
+    second_dept = Department(name="Второй отдел", is_active=True)
     db_session.add(dept)
+    db_session.add(second_dept)
     await db_session.flush()
 
     admin = User(
@@ -129,6 +131,7 @@ async def users_fixture(db_session):
         "personnel": personnel,
         "unapproved": unapproved,
         "department": dept,
+        "second_department": second_dept,
     }
 
 

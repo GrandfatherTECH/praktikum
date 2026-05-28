@@ -88,7 +88,6 @@ export function InstructionBuilderPage() {
       });
     } else if (!isEdit) {
       form.setFieldsValue({
-        city: "г. Екатеринбург",
         structured_data: {
           instruction_items: [{ value: "" }],
           instruction_subject: "",
@@ -199,9 +198,6 @@ function InstructionBuilderInner({
           <Form.Item label="Отдел" name="department_id">
             <Select allowClear options={departmentOptions} />
           </Form.Item>
-          <Form.Item label="Организация" name="organization_name" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
           <Space.Compact block>
             <Form.Item label="Должность подписанта" name="signer_position" style={{ flex: 1 }} rules={[{ required: true }]}>
               <Input />
@@ -210,9 +206,6 @@ function InstructionBuilderInner({
               <Input />
             </Form.Item>
           </Space.Compact>
-          <Form.Item label="Город" name="city" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
           <Form.Item label="Тема" name={["structured_data", "instruction_subject"]} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
@@ -239,16 +232,16 @@ function InstructionBuilderInner({
             )}
           </Form.List>
           <Form.Item label="Исполнители" name={["structured_data", "participants"]}>
-            <Select mode="multiple" options={userOptions} />
+            <Select mode="multiple" options={userOptions} optionFilterProp="label" />
           </Form.Item>
           <Form.Item label="Отделы-участники" name={["structured_data", "participant_departments"]}>
-            <Select mode="multiple" options={departmentOptions} />
+            <Select mode="multiple" options={departmentOptions} optionFilterProp="label" />
           </Form.Item>
           <Form.Item label="Контроль исполнения" name={["structured_data", "control_assignee_text"]} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
           <Form.Item label="Ознакомление" name={["structured_data", "acknowledgement_people"]}>
-            <Select mode="multiple" options={userOptions} />
+            <Select mode="multiple" options={userOptions} optionFilterProp="label" />
           </Form.Item>
           <Space.Compact block>
             <Form.Item label="Исполнитель" name="executor_name" style={{ flex: 1 }}>

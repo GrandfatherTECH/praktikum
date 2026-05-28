@@ -12,6 +12,7 @@ from app.models.enums import (
     DocumentStatus,
     DocumentType,
 )
+from app.core.config import settings
 from app.schemas.department import DepartmentRead
 from app.schemas.user import UserRead
 
@@ -171,8 +172,8 @@ class BaseStructuredDocumentPayload(BaseModel):
     registered_number: str | None = None
     registered_date: date | None = None
     document_date: date | None = None
-    city: str = "г. Екатеринбург"
-    organization_name: str
+    city: str = settings.default_document_city
+    organization_name: str = settings.default_document_organization_name
     signer_position: str
     signer_name: str
     executor_name: str | None = None
