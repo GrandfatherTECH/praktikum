@@ -11,7 +11,10 @@ from docx.shared import Pt
 from fastapi import HTTPException, status
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
+from app.models.acknowledgement import Acknowledgement
+from app.models.approval_step import ApprovalStep
 from app.models.document import Document
 from app.models.document_file import DocumentFile
 from app.models.enums import AcknowledgementStatus, ApprovalStatus, DocumentFileKind, DocumentType
@@ -81,6 +84,7 @@ class DocumentGenerationService:
         title_text: str,
         command_text: str,
     ) -> list[DocumentFile]:
+        document = await self._load_document_for_generation(db, document.id)
         await self._delete_existing_generated_files(db, document.id, {DocumentFileKind.GENERATED_DOCX, DocumentFileKind.GENERATED_PDF})
         doc = DocxDocument()
         self._apply_base_style(doc)
@@ -106,16 +110,16 @@ class DocumentGenerationService:
         self._body_paragraph(doc, document.signer_position)
         self._body_paragraph(doc, document.signer_name)
 
-        if document.type == DocumentType.ORDER:
-            preview_users = await self._load_preview_users(db, data)
-            self._append_approval_sheet(doc, document, preview_users)
-            self._append_acknowledgement_sheet(doc, document, preview_users)
-
         if document.executor_name or data.get("executor_name"):
             self._body_paragraph(doc, "")
             self._body_paragraph(doc, f"Исп.: {document.executor_name or data.get('executor_name')}")
         if document.executor_phone or data.get("executor_phone"):
             self._body_paragraph(doc, f"тел. {document.executor_phone or data.get('executor_phone')}")
+
+        if document.type == DocumentType.ORDER:
+            preview_users = await self._load_preview_users(db, data)
+            self._append_approval_sheet(doc, document, preview_users)
+            self._append_acknowledgement_sheet(doc, document, preview_users)
 
         docx_path, pdf_path = self._document_paths(document)
         ensure_parent(docx_path)
@@ -215,8 +219,7 @@ class DocumentGenerationService:
         return value.strftime("%d.%m.%Y")
 
     def _append_acknowledgement_sheet(self, document: DocxDocument, source: Document, preview_users: dict[int, User]) -> None:
-        document.add_page_break()
-        self._center_paragraph(document, "ЛИСТ ОЗНАКОМЛЕНИЯ", bold=True, size=14)
+        self._sheet_title(document, "ЛИСТ ОЗНАКОМЛЕНИЯ")
         table = document.add_table(rows=1, cols=5)
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
         table.style = "Table Grid"
@@ -249,8 +252,7 @@ class DocumentGenerationService:
             self._format_row(row)
 
     def _append_approval_sheet(self, document: DocxDocument, source: Document, preview_users: dict[int, User]) -> None:
-        document.add_page_break()
-        self._center_paragraph(document, "ЛИСТ СОГЛАСОВАНИЯ", bold=True, size=14)
+        self._sheet_title(document, "ЛИСТ СОГЛАСОВАНИЯ")
         table = document.add_table(rows=1, cols=5)
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
         table.style = "Table Grid"
@@ -295,6 +297,29 @@ class DocumentGenerationService:
         result = await db.execute(select(User).where(User.id.in_(user_ids)))
         users = result.scalars().all()
         return {user.id: user for user in users}
+
+    async def _load_document_for_generation(self, db: AsyncSession, document_id: int) -> Document:
+        result = await db.execute(
+            select(Document)
+            .options(
+                selectinload(Document.approval_steps).selectinload(ApprovalStep.approver),
+                selectinload(Document.acknowledgements).selectinload(Acknowledgement.user),
+            )
+            .where(Document.id == document_id)
+        )
+        document = result.scalar_one_or_none()
+        if document is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+        return document
+
+    def _sheet_title(self, document: DocxDocument, title: str) -> None:
+        paragraph = document.add_paragraph()
+        paragraph.paragraph_format.page_break_before = True
+        paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = paragraph.add_run(title)
+        run.bold = True
+        run.font.name = "Times New Roman"
+        run.font.size = Pt(14)
 
     def _fill_header_row(self, cells, values: list[str]) -> None:
         for cell, value in zip(cells, values, strict=False):
