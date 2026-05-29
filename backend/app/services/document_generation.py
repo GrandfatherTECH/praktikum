@@ -19,6 +19,7 @@ from app.models.document import Document
 from app.models.document_file import DocumentFile
 from app.models.enums import AcknowledgementStatus, ApprovalStatus, DocumentFileKind, DocumentType
 from app.models.user import User
+from app.services.markdown_docx import markdown_docx_renderer
 from app.services.pdf import pdf_conversion_service
 from app.services.storage import ensure_parent, sha256sum, storage_root
 
@@ -55,13 +56,13 @@ class DocumentGenerationService:
         self._center_paragraph(doc, "В Ы П И С К А И З П Р И К А З А", bold=True, size=16)
         self._center_paragraph(doc, document.signer_position, bold=True)
         self._center_paragraph(doc, f"от {self._format_date(document.document_date or date.today())} {document.city}")
-        self._body_paragraph(doc, data.get("certifier_position", ""))
+        markdown_docx_renderer.render(doc, data.get("certifier_position", ""))
         self._body_paragraph(doc, document.title, bold=True)
         for index, item in enumerate(data.get("extracted_items", []), start=1):
-            self._body_paragraph(doc, f"{index}. {item}")
+            markdown_docx_renderer.render_numbered_item(doc, index, item)
         self._body_paragraph(doc, "")
-        self._body_paragraph(doc, f"Выписка верна: {data.get('certifier_position', '')}")
-        self._body_paragraph(doc, data.get("certifier_name", ""))
+        markdown_docx_renderer.render(doc, f"Выписка верна: {data.get('certifier_position', '')}")
+        markdown_docx_renderer.render(doc, data.get("certifier_name", ""))
 
         docx_path, pdf_path = self._document_paths(document)
         ensure_parent(docx_path)
@@ -105,13 +106,13 @@ class DocumentGenerationService:
         subject = data.get("order_subject") or data.get("instruction_subject") or document.title
         self._center_paragraph(doc, subject, bold=True)
         if data.get("legal_basis_text"):
-            self._body_paragraph(doc, data["legal_basis_text"])
+            markdown_docx_renderer.render(doc, data["legal_basis_text"])
         if data.get("purpose_text"):
-            self._body_paragraph(doc, data["purpose_text"])
+            markdown_docx_renderer.render(doc, data["purpose_text"])
         self._body_paragraph(doc, command_text, bold=True)
         for index, item in enumerate(data.get("order_items", data.get("instruction_items", [])), start=1):
-            self._body_paragraph(doc, f"{index}. {item}")
-        self._body_paragraph(doc, f"Контроль исполнения возложить на {data.get('control_assignee_text', '')}.")
+            markdown_docx_renderer.render_numbered_item(doc, index, item)
+        markdown_docx_renderer.render(doc, f"Контроль исполнения возложить на {data.get('control_assignee_text', '')}.")
         self._body_paragraph(doc, "")
         self._body_paragraph(doc, document.signer_position)
         self._body_paragraph(doc, document.signer_name)

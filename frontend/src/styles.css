@@ -259,6 +259,101 @@ body {
   color: var(--text-main) !important;
 }
 
+.markdown-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.markdown-editor__toolbar {
+  display: flex;
+  gap: 8px;
+}
+
+.markdown-editor__layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.markdown-editor__pane {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.markdown-editor__label {
+  color: var(--text-soft);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.markdown-editor__input {
+  width: 100%;
+  min-height: 220px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.markdown-preview {
+  color: var(--text-main);
+  line-height: 1.65;
+}
+
+.markdown-preview--panel {
+  min-height: 220px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.markdown-preview__heading {
+  margin: 0 0 12px;
+  color: var(--text-main);
+}
+
+.markdown-preview__heading--1 {
+  font-size: 22px;
+}
+
+.markdown-preview__heading--2 {
+  font-size: 18px;
+}
+
+.markdown-preview__heading--3 {
+  font-size: 16px;
+}
+
+.markdown-preview__paragraph,
+.markdown-preview__quote,
+.markdown-preview__list {
+  margin: 0 0 12px;
+}
+
+.markdown-preview__quote {
+  margin-left: 0;
+  padding-left: 16px;
+  border-left: 3px solid rgba(187, 52, 52, 0.7);
+  color: #d5d5db;
+}
+
+.markdown-preview code {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 0.95em;
+}
+
+@media (max-width: 980px) {
+  .markdown-editor__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 .app-content .ant-input::placeholder,
 .app-content .ant-input-textarea textarea::placeholder,
 .app-content .ant-select-selection-placeholder,

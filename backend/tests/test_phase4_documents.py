@@ -4,6 +4,7 @@ import zipfile
 from pathlib import Path
 
 import pytest
+from docx import Document as DocxDocument
 from sqlalchemy import select
 
 from app.models.audit_log import AuditLog
@@ -45,9 +46,12 @@ def build_order_payload(users_fixture) -> dict:
         "executor_phone": "2-74",
         "structured_data": {
             "order_subject": "О назначении ответственных",
-            "legal_basis_text": "В целях организации работы.",
-            "purpose_text": "Для обеспечения контроля исполнения.",
-            "order_items": ["Назначить ответственного за архив.", "Обеспечить еженедельный контроль."],
+            "legal_basis_text": "**В целях** организации работы.\n\n> Основание довести до исполнителей.",
+            "purpose_text": "Для обеспечения *контроля* исполнения.",
+            "order_items": [
+                "Назначить **ответственного** за архив.\n- Подготовить ключи\n- Сверить журнал",
+                "Обеспечить еженедельный контроль.\n1. Проверять отчеты\n2. Докладывать начальнику",
+            ],
             "control_assignee_text": "заместителя начальника училища",
             "approval_people": [users_fixture["chief"].id, users_fixture["dept_head"].id],
             "acknowledgement_people": [users_fixture["employee"].id],
@@ -179,6 +183,15 @@ async def test_acknowledgement_and_generated_docx_contains_lists(client, users_f
     assert "Chief" in xml
     assert "Лист ознакомления" in xml
     assert "Employee" in xml
+
+    doc = DocxDocument(docx_file.storage_path)
+    paragraph_texts = [paragraph.text for paragraph in doc.paragraphs]
+    assert any("• Подготовить ключи" in text for text in paragraph_texts)
+    assert any("1. Проверять отчеты" in text for text in paragraph_texts)
+    assert any("Основание довести до исполнителей." in text for text in paragraph_texts)
+
+    assert any(run.text == "В целях" and run.bold for paragraph in doc.paragraphs for run in paragraph.runs)
+    assert any(run.text == "контроля" and run.italic for paragraph in doc.paragraphs for run in paragraph.runs)
 
 
 async def test_generate_extract_and_download_allowed(client, users_fixture):

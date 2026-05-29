@@ -4,6 +4,7 @@ import { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { createOrder, generateOrder, sendOrderForApproval, updateOrder } from "../api/documents";
+import { MarkdownEditor } from "../components/MarkdownEditor";
 import type { OrderPayload } from "../api/types";
 import { QueryState } from "../components/QueryState";
 import { getErrorMessage } from "../utils/errors";
@@ -222,10 +223,10 @@ function OrderBuilderInner({ title, form, departmentOptions, userOptions, onSave
               <Input />
             </Form.Item>
             <Form.Item label="Правовое основание" name={["structured_data", "legal_basis_text"]} rules={[{ required: true }]}>
-              <Input.TextArea rows={3} />
+              <MarkdownEditor rows={8} placeholder="Например: **В целях** организации работы." />
             </Form.Item>
             <Form.Item label="Цель" name={["structured_data", "purpose_text"]} rules={[{ required: true }]}>
-              <Input.TextArea rows={3} />
+              <MarkdownEditor rows={8} placeholder="Опишите цель приказа с нужным форматированием." />
             </Form.Item>
             <Form.List name={["structured_data", "order_items"]}>
               {(fields, { add, remove }) => (
@@ -235,7 +236,7 @@ function OrderBuilderInner({ title, form, departmentOptions, userOptions, onSave
                       <Space key={field.key} align="start" style={{ display: "flex" }}>
                         <Typography.Text>{index + 1}.</Typography.Text>
                         <Form.Item {...field} name={[field.name, "value"]} rules={[{ required: true }]} style={{ minWidth: 600 }}>
-                          <Input.TextArea rows={2} />
+                          <MarkdownEditor rows={7} placeholder="Текст пункта приказа в Markdown." />
                         </Form.Item>
                         <Button danger onClick={() => remove(field.name)}>
                           Удалить

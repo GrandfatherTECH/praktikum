@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { createInstruction, generateInstruction, sendInstruction, updateInstruction } from "../api/documents";
+import { MarkdownEditor } from "../components/MarkdownEditor";
 import type { InstructionPayload } from "../api/types";
 import { QueryState } from "../components/QueryState";
 import { getErrorMessage } from "../utils/errors";
@@ -172,7 +173,7 @@ function InstructionBuilderInner({
             <Input />
           </Form.Item>
           <Form.Item label="Цель" name={["structured_data", "purpose_text"]} rules={[{ required: true }]}>
-            <Input.TextArea rows={3} />
+            <MarkdownEditor rows={8} placeholder="Опишите цель приказания с форматированием Markdown." />
           </Form.Item>
           <Form.List name={["structured_data", "instruction_items"]}>
             {(fields, { add, remove }) => (
@@ -182,7 +183,7 @@ function InstructionBuilderInner({
                     <Space key={field.key} align="start">
                       <Typography.Text>{index + 1}.</Typography.Text>
                       <Form.Item {...field} name={[field.name, "value"]} rules={[{ required: true }]} style={{ minWidth: 600 }}>
-                        <Input.TextArea rows={2} />
+                        <MarkdownEditor rows={7} placeholder="Текст пункта приказания в Markdown." />
                       </Form.Item>
                       <Button danger onClick={() => remove(field.name)}>
                         Удалить

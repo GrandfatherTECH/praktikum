@@ -16,6 +16,7 @@ import {
   sendForAcknowledgement,
 } from "../api/documents";
 import type { Acknowledgement, ApprovalStep } from "../api/types";
+import { MarkdownPreview } from "../components/MarkdownEditor";
 import { QueryState } from "../components/QueryState";
 import { getErrorMessage } from "../utils/errors";
 import { DOCUMENT_STATUS_LABELS, DOCUMENT_TYPE_LABELS } from "./documentHelpers";
@@ -385,10 +386,14 @@ function renderStructuredDocument(documentType: string, structuredData: Record<s
     const orderItems = Array.isArray(structuredData.order_items) ? structuredData.order_items : [];
     return (
       <Space direction="vertical" size={16} style={{ width: "100%" }}>
-        <Descriptions bordered size="small" column={1}>
+          <Descriptions bordered size="small" column={1}>
           <Descriptions.Item label="Тема приказа">{String(structuredData.order_subject ?? "-")}</Descriptions.Item>
-          <Descriptions.Item label="Правовое основание">{String(structuredData.legal_basis_text ?? "-")}</Descriptions.Item>
-          <Descriptions.Item label="Цель">{String(structuredData.purpose_text ?? "-")}</Descriptions.Item>
+          <Descriptions.Item label="Правовое основание">
+            <MarkdownPreview content={String(structuredData.legal_basis_text ?? "")} />
+          </Descriptions.Item>
+          <Descriptions.Item label="Цель">
+            <MarkdownPreview content={String(structuredData.purpose_text ?? "")} />
+          </Descriptions.Item>
           <Descriptions.Item label="Контроль исполнения">{String(structuredData.control_assignee_text ?? "-")}</Descriptions.Item>
         </Descriptions>
         <Table
@@ -397,7 +402,12 @@ function renderStructuredDocument(documentType: string, structuredData: Record<s
           dataSource={orderItems.map((item, index) => ({ key: index + 1, index: index + 1, text: String(item) }))}
           columns={[
             { title: "№", dataIndex: "index", key: "index", width: 80 },
-            { title: "Пункт приказа", dataIndex: "text", key: "text" },
+            {
+              title: "Пункт приказа",
+              dataIndex: "text",
+              key: "text",
+              render: (value: string) => <MarkdownPreview content={value} />,
+            },
           ]}
         />
       </Space>
@@ -410,7 +420,9 @@ function renderStructuredDocument(documentType: string, structuredData: Record<s
       <Space direction="vertical" size={16} style={{ width: "100%" }}>
         <Descriptions bordered size="small" column={1}>
           <Descriptions.Item label="Тема">{String(structuredData.instruction_subject ?? "-")}</Descriptions.Item>
-          <Descriptions.Item label="Цель">{String(structuredData.purpose_text ?? "-")}</Descriptions.Item>
+          <Descriptions.Item label="Цель">
+            <MarkdownPreview content={String(structuredData.purpose_text ?? "")} />
+          </Descriptions.Item>
           <Descriptions.Item label="Контроль исполнения">{String(structuredData.control_assignee_text ?? "-")}</Descriptions.Item>
         </Descriptions>
         <Table
@@ -419,7 +431,12 @@ function renderStructuredDocument(documentType: string, structuredData: Record<s
           dataSource={instructionItems.map((item, index) => ({ key: index + 1, index: index + 1, text: String(item) }))}
           columns={[
             { title: "№", dataIndex: "index", key: "index", width: 80 },
-            { title: "Пункт приказания", dataIndex: "text", key: "text" },
+            {
+              title: "Пункт приказания",
+              dataIndex: "text",
+              key: "text",
+              render: (value: string) => <MarkdownPreview content={value} />,
+            },
           ]}
         />
       </Space>
