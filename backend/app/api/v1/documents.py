@@ -43,7 +43,6 @@ from app.schemas.document import (
     ReturnForRevisionRequest,
     SendForAcknowledgementRequest,
     SendForApprovalRequest,
-    SendInstructionRequest,
 )
 from app.services.audit import create_audit_log
 from app.services.document_generation import document_generation_service
@@ -362,7 +361,6 @@ async def create_instruction(
     db: AsyncSession = Depends(get_db_session),
 ) -> DocumentRead:
     await _ensure_department_exists(db, payload.department_id)
-    await _ensure_users_exist(db, payload.structured_data.participants + payload.structured_data.acknowledgement_people)
     document = Document(
         type=DocumentType.INSTRUCTION,
         status=DocumentStatus.DRAFT,
@@ -372,7 +370,6 @@ async def create_instruction(
     )
     db.add(document)
     await db.flush()
-    await _replace_acknowledgements(db, document, payload.structured_data.acknowledgement_people)
     ip_address, user_agent = _request_meta(request)
     await create_audit_log(
         db,
@@ -405,9 +402,7 @@ async def update_instruction(
     if "department_id" in data:
         await _ensure_department_exists(db, data["department_id"])
     if payload.structured_data is not None:
-        await _ensure_users_exist(db, payload.structured_data.participants + payload.structured_data.acknowledgement_people)
         document.structured_data = payload.structured_data.model_dump(mode="json")
-        await _replace_acknowledgements(db, document, payload.structured_data.acknowledgement_people)
         data.pop("structured_data", None)
     for key, value in data.items():
         setattr(document, key, value)
@@ -457,7 +452,6 @@ async def generate_instruction(
 @router.post("/instructions/{document_id}/send", response_model=DocumentRead)
 async def send_instruction(
     document_id: int,
-    payload: SendInstructionRequest,
     request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
@@ -467,9 +461,6 @@ async def send_instruction(
         raise HTTPException(status_code=400, detail="Document is not an instruction")
     if not can_edit_document(current_user, document):
         raise HTTPException(status_code=403, detail="Document cannot be sent")
-    await _ensure_users_exist(db, payload.acknowledgement_user_ids)
-    department_user_ids = await _collect_department_user_ids(db, payload.acknowledgement_department_ids)
-    await _replace_acknowledgements(db, document, payload.acknowledgement_user_ids + department_user_ids)
     await document_generation_service.generate_instruction_docx(db, document, current_user)
     document.status = DocumentStatus.SENT
     ip_address, user_agent = _request_meta(request)

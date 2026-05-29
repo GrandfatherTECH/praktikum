@@ -221,15 +221,13 @@ async def test_create_instruction(client, users_fixture):
                 "instruction_subject": "О порядке дежурства",
                 "purpose_text": "Установить порядок дежурства.",
                 "instruction_items": ["Назначить дежурного.", "Контролировать исполнение."],
-                "participants": [users_fixture["employee"].id],
-                "participant_departments": [users_fixture["department"].id],
                 "control_assignee_text": "дежурного офицера",
-                "acknowledgement_people": [users_fixture["employee"].id],
             },
         },
     )
     assert response.status_code == 201
     assert response.json()["type"] == "INSTRUCTION"
+    assert response.json()["acknowledgements"] == []
 
 
 async def test_create_incoming_and_resolution_and_audit(client, users_fixture, db_session):

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { App, Button, Card, Descriptions, Form, Input, Modal, Select, Space, Table, Tag, Typography } from "antd";
+import { Alert, App, Button, Card, Descriptions, Form, Input, Modal, Select, Space, Table, Tag, Typography } from "antd";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -114,6 +114,16 @@ export function DocumentDetailPage() {
     [departmentsQuery.data],
   );
   const structuredData = documentQuery.data?.structured_data ?? {};
+  const latestRevisionComment = useMemo(() => {
+    if (!documentQuery.data || documentQuery.data.type !== "ORDER") {
+      return null;
+    }
+    const returnedSteps = documentQuery.data.approval_steps.filter((step) => step.status === "RETURNED" && step.comment?.trim());
+    if (returnedSteps.length === 0) {
+      return null;
+    }
+    return returnedSteps[returnedSteps.length - 1].comment ?? null;
+  }, [documentQuery.data]);
   const approvalStepsPreview = useMemo<ApprovalStep[]>(() => {
     if (!documentQuery.data) {
       return [];
@@ -137,6 +147,9 @@ export function DocumentDetailPage() {
   }, [documentQuery.data, structuredData.approval_people, usersQuery.data]);
   const acknowledgementsPreview = useMemo<Acknowledgement[]>(() => {
     if (!documentQuery.data) {
+      return [];
+    }
+    if (documentQuery.data.type !== "ORDER") {
       return [];
     }
     if (documentQuery.data.acknowledgements.length > 0) {
@@ -229,8 +242,12 @@ export function DocumentDetailPage() {
               <Descriptions.Item label="Город">{documentQuery.data.city}</Descriptions.Item>
               <Descriptions.Item label="Организация">{documentQuery.data.organization_name}</Descriptions.Item>
               <Descriptions.Item label="Подписант">{`${documentQuery.data.signer_position}, ${documentQuery.data.signer_name}`}</Descriptions.Item>
-              <Descriptions.Item label="Исполнитель">{documentQuery.data.executor_name ?? "-"}</Descriptions.Item>
-              <Descriptions.Item label="Телефон">{documentQuery.data.executor_phone ?? "-"}</Descriptions.Item>
+              {documentQuery.data.type === "ORDER" ? (
+                <>
+                  <Descriptions.Item label="Исполнитель">{documentQuery.data.executor_name ?? "-"}</Descriptions.Item>
+                  <Descriptions.Item label="Телефон">{documentQuery.data.executor_phone ?? "-"}</Descriptions.Item>
+                </>
+              ) : null}
             </Descriptions>
           </Card>
 
@@ -238,45 +255,57 @@ export function DocumentDetailPage() {
             {renderStructuredDocument(documentQuery.data.type, structuredData)}
           </Card>
 
-          <Card title="Статус согласования">
-            <Table
-              rowKey="id"
-              pagination={false}
-              dataSource={approvalStepsPreview}
-              columns={[
-                { title: "Шаг", dataIndex: "step_order", key: "step_order", width: 80 },
-                {
-                  title: "Согласующий",
-                  key: "approver",
-                  render: (_, record) => record.approver?.full_name ?? `Пользователь #${record.approver_id}`,
-                },
-                { title: "Статус", dataIndex: "status", key: "status", width: 180 },
-                { title: "Комментарий", dataIndex: "comment", key: "comment" },
-              ]}
-            />
-          </Card>
+          {documentQuery.data.type === "ORDER" ? (
+            <>
+              {latestRevisionComment ? (
+                <Alert
+                  type="warning"
+                  showIcon
+                  message="Комментарий к доработке"
+                  description={latestRevisionComment}
+                />
+              ) : null}
+              <Card title="Статус согласования">
+                <Table
+                  rowKey="id"
+                  pagination={false}
+                  dataSource={approvalStepsPreview}
+                  columns={[
+                    { title: "Шаг", dataIndex: "step_order", key: "step_order", width: 80 },
+                    {
+                      title: "Согласующий",
+                      key: "approver",
+                      render: (_, record) => record.approver?.full_name ?? `Пользователь #${record.approver_id}`,
+                    },
+                    { title: "Статус", dataIndex: "status", key: "status", width: 180 },
+                    { title: "Комментарий", dataIndex: "comment", key: "comment" },
+                  ]}
+                />
+              </Card>
 
-          <Card title="Статус ознакомления">
-            <Table
-              rowKey="id"
-              pagination={false}
-              dataSource={acknowledgementsPreview}
-              columns={[
-                {
-                  title: "Сотрудник",
-                  key: "user",
-                  render: (_, record) => record.user?.full_name ?? `Пользователь #${record.user_id}`,
-                },
-                {
-                  title: "Должность",
-                  key: "position",
-                  render: (_, record) => record.user?.position ?? "-",
-                },
-                { title: "Статус", dataIndex: "status", key: "status", width: 180 },
-                { title: "Дата", dataIndex: "acknowledged_at", key: "acknowledged_at", width: 200 },
-              ]}
-            />
-          </Card>
+              <Card title="Статус ознакомления">
+                <Table
+                  rowKey="id"
+                  pagination={false}
+                  dataSource={acknowledgementsPreview}
+                  columns={[
+                    {
+                      title: "Сотрудник",
+                      key: "user",
+                      render: (_, record) => record.user?.full_name ?? `Пользователь #${record.user_id}`,
+                    },
+                    {
+                      title: "Должность",
+                      key: "position",
+                      render: (_, record) => record.user?.position ?? "-",
+                    },
+                    { title: "Статус", dataIndex: "status", key: "status", width: 180 },
+                    { title: "Дата", dataIndex: "acknowledged_at", key: "acknowledged_at", width: 200 },
+                  ]}
+                />
+              </Card>
+            </>
+          ) : null}
 
           <Card title="Файлы">
             <Table

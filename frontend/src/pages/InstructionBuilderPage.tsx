@@ -1,23 +1,20 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { App, Button, Card, Form, Input, Select, Space, Typography } from "antd";
-import { useEffect, useMemo } from "react";
+import { App, Button, Card, Form, Input, Space, Typography } from "antd";
+import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { createInstruction, generateInstruction, sendInstruction, updateInstruction } from "../api/documents";
 import type { InstructionPayload } from "../api/types";
 import { QueryState } from "../components/QueryState";
 import { getErrorMessage } from "../utils/errors";
-import { useDepartmentsQuery, useDocumentDetailQuery, useUsersQuery } from "./hooks";
+import { useDocumentDetailQuery } from "./hooks";
 
 type InstructionFormValues = Omit<InstructionPayload, "structured_data"> & {
   structured_data: {
     instruction_subject: string;
     purpose_text: string;
     instruction_items: { value: string }[];
-    participants: number[];
-    participant_departments: number[];
     control_assignee_text: string;
-    acknowledgement_people: number[];
   };
 };
 
@@ -28,18 +25,7 @@ export function InstructionBuilderPage() {
   const { notification } = App.useApp();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const usersQuery = useUsersQuery();
-  const departmentsQuery = useDepartmentsQuery();
   const documentQuery = useDocumentDetailQuery(Number(documentId), isEdit);
-
-  const userOptions = useMemo(
-    () => (usersQuery.data ?? []).map((user) => ({ label: user.full_name, value: user.id })),
-    [usersQuery.data],
-  );
-  const departmentOptions = useMemo(
-    () => (departmentsQuery.data ?? []).map((department) => ({ label: department.name, value: department.id })),
-    [departmentsQuery.data],
-  );
 
   const saveMutation = useMutation({
     mutationFn: async (values: InstructionPayload) => {
@@ -51,11 +37,7 @@ export function InstructionBuilderPage() {
   });
   const generateMutation = useMutation({ mutationFn: generateInstruction });
   const sendMutation = useMutation({
-    mutationFn: ({ docId, values }: { docId: number; values: InstructionPayload }) =>
-      sendInstruction(docId, {
-        acknowledgement_user_ids: values.structured_data.acknowledgement_people,
-        acknowledgement_department_ids: values.structured_data.participant_departments,
-      }),
+    mutationFn: (docId: number) => sendInstruction(docId),
   });
 
   useEffect(() => {
@@ -77,12 +59,7 @@ export function InstructionBuilderPage() {
           instruction_items: Array.isArray(data.instruction_items)
             ? (data.instruction_items as string[]).map((value) => ({ value }))
             : [{ value: "" }],
-          participants: Array.isArray(data.participants) ? (data.participants as number[]) : [],
-          participant_departments: Array.isArray(data.participant_departments)
-            ? (data.participant_departments as number[])
-            : [],
           control_assignee_text: String(data.control_assignee_text ?? ""),
-          acknowledgement_people: Array.isArray(data.acknowledgement_people) ? (data.acknowledgement_people as number[]) : [],
         },
       });
     } else if (!isEdit) {
@@ -91,10 +68,7 @@ export function InstructionBuilderPage() {
           instruction_items: [{ value: "" }],
           instruction_subject: "",
           purpose_text: "",
-          participants: [],
-          participant_departments: [],
           control_assignee_text: "",
-          acknowledgement_people: [],
         } as never,
       });
     }
@@ -121,7 +95,7 @@ export function InstructionBuilderPage() {
       await generateMutation.mutateAsync(document.id);
     }
     if (mode === "send") {
-      await sendMutation.mutateAsync({ docId: document.id, values });
+      await sendMutation.mutateAsync(document.id);
     }
     notification.success({ message: "Операция выполнена" });
     await navigate(`/documents/${document.id}`);
@@ -130,15 +104,13 @@ export function InstructionBuilderPage() {
   if (isEdit) {
     return (
       <QueryState
-        isLoading={documentQuery.isLoading || usersQuery.isLoading || departmentsQuery.isLoading}
+        isLoading={documentQuery.isLoading}
         error={documentQuery.error ? getErrorMessage(documentQuery.error) : undefined}
       >
         {documentQuery.data ? (
           <InstructionBuilderInner
             title="Редактирование приказания"
             form={form}
-            departmentOptions={departmentOptions}
-            userOptions={userOptions}
             onSaveAndThen={saveAndThen}
             loading={saveMutation.isPending || generateMutation.isPending || sendMutation.isPending}
           />
@@ -151,8 +123,6 @@ export function InstructionBuilderPage() {
     <InstructionBuilderInner
       title="Создание приказания"
       form={form}
-      departmentOptions={departmentOptions}
-      userOptions={userOptions}
       onSaveAndThen={saveAndThen}
       loading={saveMutation.isPending || generateMutation.isPending || sendMutation.isPending}
     />
@@ -162,8 +132,6 @@ export function InstructionBuilderPage() {
 type InstructionBuilderInnerProps = {
   title: string;
   form: ReturnType<typeof Form.useForm<InstructionFormValues>>[0];
-  departmentOptions: { label: string; value: number }[];
-  userOptions: { label: string; value: number }[];
   onSaveAndThen: (mode: "save" | "generate" | "send") => Promise<void>;
   loading: boolean;
 };
@@ -171,8 +139,6 @@ type InstructionBuilderInnerProps = {
 function InstructionBuilderInner({
   title,
   form,
-  departmentOptions,
-  userOptions,
   onSaveAndThen,
   loading,
 }: InstructionBuilderInnerProps) {
@@ -227,26 +193,9 @@ function InstructionBuilderInner({
               </Card>
             )}
           </Form.List>
-          <Form.Item label="Исполнители" name={["structured_data", "participants"]}>
-            <Select mode="multiple" options={userOptions} optionFilterProp="label" />
-          </Form.Item>
-          <Form.Item label="Отделы для ознакомления" name={["structured_data", "participant_departments"]}>
-            <Select mode="multiple" options={departmentOptions} optionFilterProp="label" />
-          </Form.Item>
           <Form.Item label="Контроль исполнения" name={["structured_data", "control_assignee_text"]} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item label="Ознакомление" name={["structured_data", "acknowledgement_people"]}>
-            <Select mode="multiple" options={userOptions} optionFilterProp="label" />
-          </Form.Item>
-          <Space.Compact block>
-            <Form.Item label="Исполнитель" name="executor_name" style={{ flex: 1 }}>
-              <Input />
-            </Form.Item>
-            <Form.Item label="Телефон исполнителя" name="executor_phone" style={{ flex: 1 }}>
-              <Input />
-            </Form.Item>
-          </Space.Compact>
         </Form>
       </Card>
       <Space>

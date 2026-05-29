@@ -69,7 +69,7 @@ def build_allowed_actions(user: User, document: Document) -> list[str]:
         actions.extend(["send_for_acknowledgement", "generate_extract"])
     if document.type == DocumentType.INSTRUCTION and document.status == DocumentStatus.DRAFT and can_edit_document(user, document):
         actions.append("send")
-    if any(item.user_id == user.id and item.status.value == "PENDING" for item in document.acknowledgements):
+    if document.type == DocumentType.ORDER and any(item.user_id == user.id and item.status.value == "PENDING" for item in document.acknowledgements):
         actions.append("acknowledge")
     return actions
 
@@ -78,4 +78,6 @@ def requires_action(user: User, document: Document) -> bool:
     waiting = current_waiting_step(document)
     if waiting and waiting.approver_id == user.id:
         return True
-    return any(item.user_id == user.id and item.status.value == "PENDING" for item in document.acknowledgements)
+    if document.type == DocumentType.ORDER:
+        return any(item.user_id == user.id and item.status.value == "PENDING" for item in document.acknowledgements)
+    return False

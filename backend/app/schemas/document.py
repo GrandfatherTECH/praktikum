@@ -42,12 +42,7 @@ class StructuredInstructionData(BaseModel):
     instruction_subject: str
     purpose_text: str
     instruction_items: list[str] = Field(default_factory=list)
-    participants: list[int] = Field(default_factory=list)
-    participant_departments: list[int] = Field(default_factory=list)
     control_assignee_text: str
-    acknowledgement_people: list[int] = Field(default_factory=list)
-    executor_name: str | None = None
-    executor_phone: str | None = None
 
     @field_validator("instruction_items")
     @classmethod
@@ -254,11 +249,6 @@ class SendForAcknowledgementRequest(BaseModel):
         if not self.user_ids and not self.department_ids:
             raise ValueError("At least one acknowledgement target is required")
         return self
-
-
-class SendInstructionRequest(BaseModel):
-    acknowledgement_user_ids: list[int] = Field(default_factory=list)
-    acknowledgement_department_ids: list[int] = Field(default_factory=list)
 
 
 class GenerateExtractRequest(BaseModel):

@@ -176,12 +176,7 @@ export type StructuredInstructionData = {
   instruction_subject: string;
   purpose_text: string;
   instruction_items: string[];
-  participants: number[];
-  participant_departments: number[];
   control_assignee_text: string;
-  acknowledgement_people: number[];
-  executor_name?: string | null;
-  executor_phone?: string | null;
 };
 
 export type StructuredIncomingData = {
@@ -281,11 +276,6 @@ export type ReturnForRevisionPayload = {
 export type SendForAcknowledgementPayload = {
   user_ids: number[];
   department_ids: number[];
-};
-
-export type SendInstructionPayload = {
-  acknowledgement_user_ids: number[];
-  acknowledgement_department_ids: number[];
 };
 
 export type GenerateExtractPayload = {

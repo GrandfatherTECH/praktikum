@@ -37,7 +37,13 @@ class DocumentGenerationService:
         return await self._generate_main_document(db, document, current_user, title_text="П Р И К А З", command_text="П Р И К А З Ы В А Ю:")
 
     async def generate_instruction_docx(self, db: AsyncSession, document: Document, current_user: User) -> list[DocumentFile]:
-        return await self._generate_main_document(db, document, current_user, title_text="П Р И К А З А Н И Е", command_text="П Р И К А З Ы В А Ю:")
+        return await self._generate_main_document(
+            db,
+            document,
+            current_user,
+            title_text="П Р И К А З А Н И Е",
+            command_text="П Р И К А З Ы В А Ю:",
+        )
 
     async def generate_order_extract_docx(self, db: AsyncSession, document: Document, current_user: User) -> list[DocumentFile]:
         await self._delete_existing_generated_files(db, document.id, {DocumentFileKind.EXTRACT_DOCX, DocumentFileKind.EXTRACT_PDF})
@@ -110,10 +116,10 @@ class DocumentGenerationService:
         self._body_paragraph(doc, document.signer_position)
         self._body_paragraph(doc, document.signer_name)
 
-        if document.executor_name or data.get("executor_name"):
+        if document.type == DocumentType.ORDER and (document.executor_name or data.get("executor_name")):
             self._body_paragraph(doc, "")
             self._body_paragraph(doc, f"Исп.: {document.executor_name or data.get('executor_name')}")
-        if document.executor_phone or data.get("executor_phone"):
+        if document.type == DocumentType.ORDER and (document.executor_phone or data.get("executor_phone")):
             self._body_paragraph(doc, f"тел. {document.executor_phone or data.get('executor_phone')}")
 
         if document.type == DocumentType.ORDER:

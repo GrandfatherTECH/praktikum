@@ -12,7 +12,6 @@ import type {
   ReturnForRevisionPayload,
   SendForAcknowledgementPayload,
   SendForApprovalPayload,
-  SendInstructionPayload,
 } from "./types";
 
 export function listDocuments(section = "all", type?: DocumentType) {
@@ -56,8 +55,8 @@ export function generateInstruction(documentId: number) {
   return apiRequest<DocumentGenerateResponse>(`/documents/instructions/${documentId}/generate`, { method: "POST" });
 }
 
-export function sendInstruction(documentId: number, payload: SendInstructionPayload) {
-  return apiRequest<Document>(`/documents/instructions/${documentId}/send`, { method: "POST", body: payload });
+export function sendInstruction(documentId: number) {
+  return apiRequest<Document>(`/documents/instructions/${documentId}/send`, { method: "POST" });
 }
 
 export function approveDocument(documentId: number, comment?: string) {
