@@ -1,5 +1,9 @@
 # SED Phase 4
 
+<img width="1536" height="1141" alt="image" src="https://github.com/user-attachments/assets/404c56dd-370c-49a8-be00-9988cd2d2ec1" />
+<img width="1526" height="1131" alt="image" src="https://github.com/user-attachments/assets/e2b13853-0030-4ddd-b2d0-9c7c560c02ad" />
+<img width="1885" height="1148" alt="image" src="https://github.com/user-attachments/assets/c5bb4c0f-54d7-4124-ae28-819f1f078bac" />
+
 Phase 4 adds a structured official document builder on top of the existing auth/admin foundation.
 
 Architecture remains unchanged:
